@@ -1,78 +1,77 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
 
 :root {
-  --ink: #0D0D0D;
-  --ink-secondary: #3A3A3A;
-  --ink-muted: #767676;
-  --paper: #F9F6F0;
-  --paper-warm: #F2EDE4;
-  --rule: #D6CFC4;
-  --accent: #B5371A;
-  --accent-light: #F5EBE7;
-  --accent-border: #DDB8AF;
-  --verified: #1A6B3A;
-  --verified-light: #E7F3EC;
-  --verified-border: #B8DEC8;
-  --white: #FFFFFF;
-  --gold: #F0C070;
-
+  --bg:            #0A0A0A;
+  --bg-raised:     #111111;
+  --bg-elevated:   #181818;
+  --bg-overlay:    #202020;
+  --border:        #2A2A2A;
+  --border-subtle: #1E1E1E;
+  --text:          #F0EEE9;
+  --text-secondary:#A8A49E;
+  --text-muted:    #666260;
+  --text-disabled: #3A3A3A;
+  --accent:        #C4401E;
+  --accent-hover:  #D94E29;
+  --accent-subtle: #1E1008;
+  --accent-border: #5A2010;
+  --verified:      #22C55E;
+  --verified-dim:  #14532D;
+  --gold:          #F0C070;
+  --gold-dim:      #3D2E08;
   --font-display: 'Playfair Display', Georgia, serif;
-  --font-body: 'DM Sans', sans-serif;
-  --font-mono: 'DM Mono', monospace;
+  --font-body:    'DM Sans', -apple-system, sans-serif;
+  --font-mono:    'DM Mono', 'Fira Code', monospace;
+  --bottom-nav-h: 64px;
+  --top-bar-h:    52px;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; background: var(--bg); }
 body {
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  padding-bottom: var(--bottom-nav-h);
 }
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: var(--font-body); }
+input, textarea, select { font-family: var(--font-body); }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-/* ─── ANIMATIONS ─── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-.fade-up {
-  opacity: 0;
-  animation: fadeUp 0.6s ease forwards;
-}
-.delay-1 { animation-delay: 0.1s; }
-.delay-2 { animation-delay: 0.2s; }
-.delay-3 { animation-delay: 0.35s; }
-.delay-4 { animation-delay: 0.5s; }
+.fade-up { opacity: 0; animation: fadeUp 0.5s ease forwards; }
+.fade-in  { opacity: 0; animation: fadeIn 0.4s ease forwards; }
+.delay-1 { animation-delay: 0.08s; }
+.delay-2 { animation-delay: 0.16s; }
+.delay-3 { animation-delay: 0.26s; }
+.delay-4 { animation-delay: 0.38s; }
 
-/* ─── UTILITIES ─── */
-.container {
-  max-width: 1160px;
-  margin: 0 auto;
-  padding: 0 32px;
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-raised) 25%, var(--bg-elevated) 50%, var(--bg-raised) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
 }
 
-@media (max-width: 600px) {
-  .container { padding: 0 20px; }
-}
+.container { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
+.hash { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); letter-spacing: 0.02em; }
+.divider { height: 1px; background: var(--border); }
+::selection { background: var(--accent-subtle); color: var(--text); }
+
+@media (max-width: 600px) { body { font-size: 14px; } }

@@ -1,0 +1,83 @@
+.page { min-height: 100vh; padding-bottom: 80px; }
+.topBar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: var(--top-bar-h);
+  background: rgba(10,10,10,0.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.title { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+.disconnectBtn { font-size: 12px; color: var(--text-muted); border: 1px solid var(--border); background: none; padding: 5px 10px; border-radius: 5px; }
+
+.connectState { display: flex; flex-direction: column; align-items: center; padding: 48px 24px; text-align: center; gap: 16px; }
+.connectIcon { font-size: 48px; color: var(--accent); margin-bottom: 8px; }
+.connectHeading { font-family: var(--font-display); font-size: 22px; font-weight: 700; }
+.connectBody { font-size: 14px; color: var(--text-secondary); line-height: 1.6; max-width: 320px; }
+.walletOptions { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 320px; }
+.walletOption {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; background: var(--bg-raised);
+  border: 1px solid var(--border); border-radius: 8px;
+  font-size: 14px; color: var(--text); transition: all 0.15s;
+}
+.walletOption:hover { border-color: var(--accent); }
+.walletOptionIcon { color: var(--accent); font-size: 18px; }
+.walletOptionArrow { margin-left: auto; color: var(--text-muted); }
+.connectNote { font-size: 11px; color: var(--text-muted); max-width: 280px; line-height: 1.5; }
+
+.addressBar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px; background: var(--bg-raised);
+  border-bottom: 1px solid var(--border);
+}
+.addressLabel { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; color: var(--verified); text-transform: uppercase; }
+.address { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); flex: 1; }
+.addressCopy { font-size: 14px; color: var(--text-muted); cursor: pointer; }
+
+.balanceCard {
+  margin: 20px; padding: 20px;
+  background: linear-gradient(135deg, var(--bg-raised), var(--accent-subtle));
+  border: 1px solid var(--accent-border); border-radius: 12px;
+}
+.balanceRow { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+.balance { display: flex; align-items: baseline; gap: 6px; }
+.balanceNum { font-family: var(--font-mono); font-size: 32px; font-weight: 700; color: var(--text); }
+.balanceUnit { font-size: 14px; color: var(--text-secondary); }
+.balanceUsd { font-size: 13px; color: var(--text-muted); }
+.balanceSub { display: flex; gap: 8px; font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+.withdrawBtn {
+  padding: 10px 20px; background: var(--accent); color: white;
+  font-size: 13px; font-weight: 600; border: none; border-radius: 6px;
+}
+
+.statsRow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 20px; }
+.statCard {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 12px; background: var(--bg-raised); border: 1px solid var(--border); border-radius: 8px;
+}
+.statCardNum { font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--text); }
+.statCardLabel { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.section { padding: 24px 20px 0; }
+.sectionTitle { font-family: var(--font-display); font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+
+.txList { display: flex; flex-direction: column; gap: 2px; }
+.tx {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; background: var(--bg-raised);
+  border: 1px solid var(--border); border-radius: 7px;
+}
+.txLeft { display: flex; flex-direction: column; gap: 2px; }
+.txType { font-size: 13px; font-weight: 500; color: var(--text); }
+.txRecord { font-size: 11px; color: var(--text-muted); }
+.txRight { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.txAmount { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+.txTime { font-size: 11px; color: var(--text-muted); }
+
+@media (min-width: 768px) {
+  .page { padding-left: 72px; }
+  .addressBar { padding: 10px 32px; }
+  .balanceCard { margin: 24px 32px; }
+  .statsRow { padding: 0 32px; }
+  .section { padding: 24px 32px 0; }
+}
