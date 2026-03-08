@@ -1,0 +1,23 @@
+.bar {
+  background: var(--ink);
+  color: var(--white);
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+}
+
+.bar strong {
+  color: var(--gold);
+}
+
+.bar a {
+  color: var(--gold);
+  text-decoration: underline;
+  transition: opacity 0.2s;
+}
+
+.bar a:hover {
+  opacity: 0.8;
+}

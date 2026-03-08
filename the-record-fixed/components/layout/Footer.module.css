@@ -1,0 +1,122 @@
+.footer {
+  background: var(--ink);
+  color: var(--white);
+  padding: 48px 0 32px;
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 48px;
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 12px;
+}
+
+.brand span {
+  color: var(--gold);
+}
+
+.tagline {
+  font-size: 13px;
+  font-weight: 300;
+  color: #888;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.chain {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chainDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--verified);
+  animation: pulse 3s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.colTitle {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: #666;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.linkList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.linkList a {
+  font-size: 13px;
+  font-weight: 300;
+  color: #999;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.linkList a:hover {
+  color: var(--white);
+}
+
+.bottom {
+  border-top: 1px solid #222;
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.legal {
+  font-size: 12px;
+  font-weight: 300;
+  color: #555;
+}
+
+.legal a {
+  color: #555;
+  transition: color 0.2s;
+}
+
+.legal a:hover {
+  color: #999;
+}
+
+@media (max-width: 900px) {
+  .inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+}
+
+@media (max-width: 600px) {
+  .inner {
+    grid-template-columns: 1fr;
+  }
+}

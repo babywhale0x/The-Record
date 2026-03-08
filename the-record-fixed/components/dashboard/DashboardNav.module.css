@@ -1,0 +1,284 @@
+.nav {
+  background: #0F0F0F;
+  border-right: 1px solid #1E1E1E;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+/* Top block */
+.top {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid #1E1E1E;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 20px;
+  letter-spacing: -0.2px;
+}
+
+.wordmark span {
+  color: #F0C070;
+}
+
+.journalist {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1E3A2A;
+  border: 1px solid #2A5C40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: #6FCF97;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+.journalistInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.journalistName {
+  font-size: 13px;
+  font-weight: 500;
+  color: #E0E0E0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.journalistRole {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #555;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.onlineIndicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1A6B3A;
+  border: 1.5px solid #0F0F0F;
+  position: absolute;
+  bottom: 0;
+  left: 26px;
+  animation: pulse 3s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* New article button */
+.newBtn {
+  margin: 16px 16px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #B5371A;
+  border: none;
+  border-radius: 3px;
+  padding: 10px 16px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+  letter-spacing: 0.2px;
+  width: calc(100% - 32px);
+}
+
+.newBtn:hover {
+  background: #9B2E14;
+}
+
+.newBtnIcon {
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+/* Nav sections */
+.links {
+  margin-top: 16px;
+  padding: 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navSection {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  color: #333;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 8px 12px 6px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  border: none;
+  text-decoration: none;
+  width: 100%;
+  text-align: left;
+  letter-spacing: 0.2px;
+}
+
+.navItem:hover {
+  background: #181818;
+  color: #CCC;
+}
+
+.navItemActive {
+  background: #181818;
+  color: #E0E0E0;
+}
+
+.navIcon {
+  font-size: 14px;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+  color: #555;
+}
+
+.navItemActive .navIcon {
+  color: #F0C070;
+}
+
+/* Chain status */
+.chainStatus {
+  margin: auto 16px 0;
+  padding: 14px 14px;
+  background: #141414;
+  border: 1px solid #1E1E1E;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.chainDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1A6B3A;
+  flex-shrink: 0;
+  animation: pulse 3s infinite;
+}
+
+.chainLabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: #666;
+  letter-spacing: 0.5px;
+}
+
+.chainSub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #444;
+  margin-top: 2px;
+}
+
+/* Wallet */
+.wallet {
+  margin: 10px 16px 0;
+  padding: 16px;
+  background: #141414;
+  border: 1px solid #1E1E1E;
+  border-radius: 3px;
+}
+
+.walletLabel {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  color: #444;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.walletAmount {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: #F0C070;
+  letter-spacing: -0.5px;
+  margin-bottom: 10px;
+}
+
+.withdrawBtn {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: #888;
+  background: transparent;
+  border: 1px solid #2A2A2A;
+  border-radius: 2px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  letter-spacing: 0.3px;
+}
+
+.withdrawBtn:hover {
+  border-color: #555;
+  color: #CCC;
+}
+
+@media (max-width: 900px) {
+  .nav {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+}

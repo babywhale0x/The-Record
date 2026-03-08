@@ -1,0 +1,40 @@
+.section {
+  padding: 40px 0;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-warm);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  flex-wrap: wrap;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pills {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--rule);
+  padding: 7px 16px;
+  border-radius: 100px;
+  letter-spacing: 0.3px;
+}
