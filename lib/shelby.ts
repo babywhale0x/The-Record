@@ -255,7 +255,7 @@ class ShelbyClient {
 
     const contentType = res.headers.get('Content-Type') ?? 'application/octet-stream'
     const buffer = await res.arrayBuffer()
-    return { data: new Uint8Array(buffer), contentType }
+    return { data: Buffer.from(buffer) as unknown as Uint8Array, contentType }
   }
 
   /**
@@ -381,28 +381,15 @@ interface AptosResource {
  * Uses Node.js crypto (server-side only).
  */
 async function sha256Hex(data: Uint8Array): Promise<string> {
-  // Node 18+: crypto is available as a global via globalThis.crypto (Web Crypto API)
-  // or via require('crypto'). We prefer the Web Crypto path for edge compatibility.
-  if (typeof globalThis.crypto?.subtle !== 'undefined') {
-    const buf = await globalThis.crypto.subtle.digest('SHA-256', data)
-    return Array.from(new Uint8Array(buf))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')
-  }
-
-  // Fallback: Node.js crypto module
   const { createHash } = await import('crypto')
-  return createHash('sha256').update(data).digest('hex')
+  return createHash('sha256').update(Buffer.from(data)).digest('hex')
 }
 
 /**
  * Encode a string payload to UTF-8 bytes.
  */
 function encodeText(text: string): Uint8Array {
-  if (typeof TextEncoder !== 'undefined') {
-    return new TextEncoder().encode(text)
-  }
-  return Buffer.from(text, 'utf8')
+  return Buffer.from(text, 'utf8') as unknown as Uint8Array
 }
 
 /**
