@@ -79,7 +79,7 @@ export async function GET(
       headers['Content-Range'] = `${range.replace('=', ' ')}/${blob.totalBytes ?? '*'}`
     }
 
-    return new NextResponse(blob.data, {
+    return new NextResponse(Buffer.from(blob.data), {
       status: range ? 206 : 200,
       headers,
     })
