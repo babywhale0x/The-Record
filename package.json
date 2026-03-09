@@ -1,17 +1,21 @@
 {
   "name": "the-record",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "renew": "curl -X POST http://localhost:3000/api/renew -H 'Authorization: Bearer dev'"
   },
   "dependencies": {
     "next": "14.2.5",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "@shelby-protocol/sdk": "latest",
+    "@aptos-labs/ts-sdk": "latest",
+    "@supabase/supabase-js": "^2"
   },
   "devDependencies": {
     "@types/node": "^20",

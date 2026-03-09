@@ -27,8 +27,23 @@ export default function PublishPage() {
 
   const submit = async () => {
     setStatus('submitting')
-    await new Promise((r) => setTimeout(r, 1600))
-    setStatus('success')
+    try {
+      const res = await fetch('/api/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: 'Submission failed' }))
+        alert(error || 'Submission failed. Please try again.')
+        setStatus('idle')
+        return
+      }
+      setStatus('success')
+    } catch {
+      alert('Network error. Please check your connection and try again.')
+      setStatus('idle')
+    }
   }
 
   if (status === 'success') {
