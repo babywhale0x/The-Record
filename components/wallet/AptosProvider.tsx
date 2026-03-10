@@ -13,9 +13,9 @@ export default function AptosProvider({ children }: { children: ReactNode }) {
         },
       }}
       dappConfig={{
-        network: 'testnet' as any,
-        aptosApiKeys: process.env.NEXT_PUBLIC_APTOS_API_KEY,
-      }}
+  network: 'testnet' as any,
+  aptosApiKeys: { testnet: process.env.NEXT_PUBLIC_APTOS_API_KEY },
+} as any}
       onError={(error) => {
         console.error('Wallet error:', error)
       }}
