@@ -30,42 +30,43 @@ export function useWallet() {
   return ctx
 }
 
-// Aptos Wallet Standard — works with Petra, Martian, Pontem via AIP-62
-async function connectViaWalletStandard(walletName: string) {
+async function connectViaWalletStandard(walletName: string): Promise<string | null> {
   if (typeof window === 'undefined') return null
-
-  // AIP-62: wallets register themselves in window.aptos or via the wallet standard event
   const w = window as any
 
-  // Try wallet standard first (new Petra uses this)
-  if (w.aptosWallets) {
-    const wallets: any[] = w.aptosWallets.get ? w.aptosWallets.get() : []
-    const wallet = wallets.find((wlt: any) =>
-      wlt.name?.toLowerCase().includes(walletName.toLowerCase())
-    )
-    if (wallet) {
-      const response = await wallet.features['aptos:connect'].connect()
-      return response?.address || response?.account?.address || null
+  if (walletName === 'petra') {
+    // Petra exposes itself as window.aptos (new) or window.petra (legacy)
+    const provider = w.aptos || w.petra
+    if (!provider) return null
+    try {
+      // connect() returns { address, publicKey } or similar
+      const result = await provider.connect()
+      if (result?.address) return result.address
+      // some versions return nothing from connect(), need to call account()
+      const acc = await provider.account()
+      if (typeof acc === 'string') return acc
+      if (acc?.address) return acc.address
+      return null
+    } catch (e) {
+      throw e
     }
   }
 
-  // Fallback: wallet-specific globals (Martian, Pontem still use these)
-  if (walletName === 'martian' && w.martian) {
-    await w.martian.connect()
-    const acc = await w.martian.account()
+  if (walletName === 'martian') {
+    const provider = w.martian
+    if (!provider) return null
+    await provider.connect()
+    const acc = await provider.account()
+    if (typeof acc === 'string') return acc
     return acc?.address || null
   }
 
-  if (walletName === 'pontem' && w.pontem) {
-    await w.pontem.connect()
-    const acc = await w.pontem.account()
-    return acc?.address || null
-  }
-
-  // Petra new standard
-  if (walletName === 'petra' && w.aptos) {
-    await w.aptos.connect()
-    const acc = await w.aptos.account()
+  if (walletName === 'pontem') {
+    const provider = w.pontem
+    if (!provider) return null
+    await provider.connect()
+    const acc = await provider.account()
+    if (typeof acc === 'string') return acc
     return acc?.address || null
   }
 
@@ -119,12 +120,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const address = await connectViaWalletStandard(type)
 
       if (!address) {
-        // Extension not found — open Petra web for social signup
+        // Extension not installed — guide them to web.petra.app
         window.open('https://web.petra.app', '_blank')
         setState(s => ({
           ...s,
           connecting: false,
-          error: `${type} wallet extension not found. We've opened Petra's web app — sign in there with email or Apple, then come back and click "Connect Wallet" again.`,
+          error: `${type} wallet not found. We've opened Petra's web app — sign in with email or Apple, then come back and click "Connect Wallet" again.`,
         }))
         return
       }
@@ -141,12 +142,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setIsModalOpen(false)
       fetchBalances(address)
     } catch (err: any) {
-      const msg = err?.message || ''
-      const userRejected = msg.toLowerCase().includes('rejected') || msg.toLowerCase().includes('cancel')
+      const msg = (err?.message || '').toLowerCase()
+      const userRejected = msg.includes('reject') || msg.includes('cancel') || msg.includes('denied')
       setState(s => ({
         ...s,
         connecting: false,
-        error: userRejected ? 'Connection cancelled.' : 'Connection failed. Please try again.',
+        error: userRejected
+          ? 'Connection cancelled.'
+          : `Connection failed: ${err?.message || 'Please try again.'}`,
       }))
     }
   }, [])
