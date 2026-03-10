@@ -1,8 +1,8 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 
-export type WalletType = 'petra' | 'martian' | 'pontem' | null
+export type WalletType = 'petra' | 'martian' | 'pontem' | 'aptos-connect' | null
 
 export interface WalletState {
   connected: boolean
@@ -30,47 +30,44 @@ export function useWallet() {
   return ctx
 }
 
-async function connectViaWalletStandard(walletName: string): Promise<string | null> {
+async function getProvider(walletType: WalletType) {
   if (typeof window === 'undefined') return null
   const w = window as any
 
-  if (walletName === 'petra') {
-    // Petra exposes itself as window.aptos (new) or window.petra (legacy)
-    const provider = w.aptos || w.petra
-    if (!provider) return null
-    try {
-      // connect() returns { address, publicKey } or similar
-      const result = await provider.connect()
-      if (result?.address) return result.address
-      // some versions return nothing from connect(), need to call account()
-      const acc = await provider.account()
-      if (typeof acc === 'string') return acc
-      if (acc?.address) return acc.address
+  switch (walletType) {
+    case 'petra':
+      // Petra registers as window.aptos (new) — NOT window.petra
+      return w.aptos ?? null
+    case 'martian':
+      return w.martian ?? null
+    case 'pontem':
+      return w.pontem ?? null
+    default:
       return null
-    } catch (e) {
-      throw e
-    }
+  }
+}
+
+async function connectWallet(walletType: WalletType): Promise<string | null> {
+  const provider = await getProvider(walletType)
+  if (!provider) return null
+
+  // Connect — Petra/Martian/Pontem all follow same pattern
+  const connectResult = await provider.connect()
+
+  // Different wallets return address differently
+  if (typeof connectResult === 'string') return connectResult
+  if (connectResult?.address) {
+    // address may be an AccountAddress object with toString()
+    const addr = connectResult.address
+    return typeof addr === 'string' ? addr : addr?.toString?.() ?? null
   }
 
-  if (walletName === 'martian') {
-    const provider = w.martian
-    if (!provider) return null
-    await provider.connect()
-    const acc = await provider.account()
-    if (typeof acc === 'string') return acc
-    return acc?.address || null
-  }
-
-  if (walletName === 'pontem') {
-    const provider = w.pontem
-    if (!provider) return null
-    await provider.connect()
-    const acc = await provider.account()
-    if (typeof acc === 'string') return acc
-    return acc?.address || null
-  }
-
-  return null
+  // Some wallets require a separate account() call
+  const account = await provider.account()
+  if (!account) return null
+  if (typeof account === 'string') return account
+  const addr = account.address
+  return typeof addr === 'string' ? addr : addr?.toString?.() ?? null
 }
 
 export function WalletProvider({ children }: { children: ReactNode }) {
@@ -85,29 +82,25 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   })
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  useEffect(() => {
-    const saved = localStorage.getItem('the-record-wallet')
-    if (saved) {
-      try {
-        const { address, walletType } = JSON.parse(saved)
-        if (address && walletType) {
-          setState(s => ({ ...s, connected: true, address, walletType }))
-          fetchBalances(address)
-        }
-      } catch {}
+  // Restore from localStorage on mount
+  if (typeof window !== 'undefined' && !state.connected) {
+    const saved = (() => {
+      try { return JSON.parse(localStorage.getItem('the-record-wallet') || '') } catch { return null }
+    })()
+    if (saved?.address && !state.address) {
+      // Restore silently — don't block render
+      setTimeout(() => {
+        setState(s => ({ ...s, connected: true, address: saved.address, walletType: saved.walletType }))
+      }, 0)
     }
-  }, [])
+  }
 
   const fetchBalances = async (address: string) => {
     try {
       const res = await fetch(`/api/balance?address=${address}`)
       if (res.ok) {
         const data = await res.json()
-        setState(s => ({
-          ...s,
-          aptBalance: data.apt ?? null,
-          shelbyBalance: data.shelbyUsd ?? null,
-        }))
+        setState(s => ({ ...s, aptBalance: data.apt ?? null, shelbyBalance: data.shelbyUsd ?? null }))
       }
     } catch {}
   }
@@ -116,55 +109,58 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     if (!type) return
     setState(s => ({ ...s, connecting: true, error: null }))
 
+    // Aptos Connect (social login) — open popup
+    if (type === 'aptos-connect') {
+      window.open('https://aptosconnect.app', '_blank')
+      setState(s => ({
+        ...s,
+        connecting: false,
+        error: null,
+      }))
+      setIsModalOpen(false)
+      return
+    }
+
     try {
-      const address = await connectViaWalletStandard(type)
+      const address = await connectWallet(type)
 
       if (!address) {
-        // Extension not installed — guide them to web.petra.app
-        window.open('https://web.petra.app', '_blank')
+        // Extension not installed
+        const installUrls: Record<string, string> = {
+          petra: 'https://petra.app',
+          martian: 'https://martianwallet.xyz',
+          pontem: 'https://pontem.network/pontem-wallet',
+        }
+        window.open(installUrls[type] || 'https://petra.app', '_blank')
         setState(s => ({
           ...s,
           connecting: false,
-          error: `${type} wallet not found. We've opened Petra's web app — sign in with email or Apple, then come back and click "Connect Wallet" again.`,
+          error: `${type} wallet not found. We've opened the install page — install the extension, then try again.`,
         }))
         return
       }
 
       localStorage.setItem('the-record-wallet', JSON.stringify({ address, walletType: type }))
       setState(s => ({
-        ...s,
-        connected: true,
-        address,
-        walletType: type,
-        connecting: false,
-        error: null,
+        ...s, connected: true, address,
+        walletType: type, connecting: false, error: null,
       }))
       setIsModalOpen(false)
       fetchBalances(address)
     } catch (err: any) {
-      const msg = (err?.message || '').toLowerCase()
-      const userRejected = msg.includes('reject') || msg.includes('cancel') || msg.includes('denied')
+      const msg = (err?.message || err?.toString() || '').toLowerCase()
+      const rejected = msg.includes('reject') || msg.includes('cancel') || msg.includes('denied') || msg.includes('user')
       setState(s => ({
         ...s,
         connecting: false,
-        error: userRejected
-          ? 'Connection cancelled.'
-          : `Connection failed: ${err?.message || 'Please try again.'}`,
+        error: rejected ? 'Connection cancelled.' : `Failed: ${err?.message || 'Please try again.'}`,
       }))
     }
   }, [])
 
   const disconnect = useCallback(() => {
     localStorage.removeItem('the-record-wallet')
-    setState({
-      connected: false,
-      address: null,
-      walletType: null,
-      aptBalance: null,
-      shelbyBalance: null,
-      connecting: false,
-      error: null,
-    })
+    setState({ connected: false, address: null, walletType: null, aptBalance: null, shelbyBalance: null, connecting: false, error: null })
   }, [])
 
   const openConnectModal = useCallback(() => setIsModalOpen(true), [])
@@ -174,14 +170,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <WalletContext.Provider value={{
-      ...state,
-      connect,
-      disconnect,
-      openConnectModal,
-      closeConnectModal,
-      isModalOpen,
-    }}>
+    <WalletContext.Provider value={{ ...state, connect, disconnect, openConnectModal, closeConnectModal, isModalOpen }}>
       {children}
     </WalletContext.Provider>
   )

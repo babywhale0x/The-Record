@@ -31,21 +31,50 @@
 
 .subtitle {
   font-size: 13px; color: var(--text-secondary); line-height: 1.5;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
-.section { margin-bottom: 20px; }
+.section { margin-bottom: 16px; }
 .sectionLabel {
   font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
   color: var(--text-muted); text-transform: uppercase;
-  display: block; margin-bottom: 10px;
+  display: block; margin-bottom: 8px;
 }
 
+/* Social primary button */
+.socialPrimary {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 1px solid #7B6FF0;
+  border-radius: 10px;
+  color: var(--text); text-align: left;
+  transition: all 0.15s; cursor: pointer;
+  width: 100%;
+}
+.socialPrimary:hover { background: linear-gradient(135deg, #1e1e38, #1a2548); border-color: #9d8ff5; }
+.socialPrimary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.socialIcons { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.socialPrimaryText { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.socialPrimaryTitle { font-size: 14px; font-weight: 600; color: white; }
+.socialPrimaryDesc { font-size: 11px; color: #9d8ff5; }
+
+/* Divider */
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 16px 0; color: var(--text-muted); font-size: 11px;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* Extension wallet options */
 .options { display: flex; flex-direction: column; gap: 8px; }
 
 .option {
   display: flex; align-items: center; gap: 14px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -68,84 +97,14 @@
   border-radius: 50%; animation: spin 0.6s linear infinite;
 }
 
-.divider {
-  display: flex; align-items: center; gap: 12px;
-  margin: 20px 0; color: var(--text-muted); font-size: 12px;
-}
-.divider::before, .divider::after {
-  content: ''; flex: 1; height: 1px; background: var(--border);
-}
-
-.socialOption {
-  display: flex; align-items: center; gap: 14px;
-  padding: 14px 16px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text); text-align: left;
-  transition: all 0.15s; cursor: pointer;
-  width: 100%; margin-bottom: 10px;
-}
-.socialOption:hover { border-color: #7B6FF0; background: rgba(123,111,240,0.08); }
-.socialIcon { flex-shrink: 0; border-radius: 8px; overflow: hidden; display: flex; }
-.externalIcon { color: var(--text-muted); font-size: 16px; margin-left: auto; }
-
-.socialNote {
-  font-size: 11px; color: var(--text-muted); line-height: 1.5;
-  padding: 10px 12px; background: var(--bg);
-  border: 1px solid var(--border-subtle); border-radius: 8px;
-}
-
 .error {
   display: flex; align-items: flex-start; gap: 8px;
   padding: 12px 14px; background: rgba(196,64,30,0.1);
   border: 1px solid rgba(196,64,30,0.3); border-radius: 8px;
   font-size: 12px; color: var(--accent); line-height: 1.5;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 @keyframes slideUp { from { transform: translateY(16px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
 @keyframes spin { to { transform: rotate(360deg) } }
-
-.backBtn {
-  background: none; border: none; color: var(--text-muted);
-  font-size: 13px; cursor: pointer; padding: 4px 0;
-}
-.backBtn:hover { color: var(--text); }
-
-.socialSteps { display: flex; flex-direction: column; align-items: center; gap: 16px; padding-top: 8px; }
-.socialIcon { border-radius: 12px; overflow: hidden; }
-.socialTitle { font-family: var(--font-display); font-size: 22px; font-weight: 700; text-align: center; }
-.socialSubtitle { font-size: 13px; color: var(--text-secondary); text-align: center; line-height: 1.5; }
-
-.steps { width: 100%; display: flex; flex-direction: column; gap: 0; }
-.step { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; }
-.stepNum {
-  flex-shrink: 0; width: 28px; height: 28px;
-  border-radius: 50%; background: var(--accent); color: white;
-  font-size: 13px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-}
-.stepText { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
-.stepText strong { font-size: 14px; font-weight: 600; color: var(--text); }
-.stepText span { font-size: 12px; color: var(--text-muted); }
-.stepLine { width: 1px; height: 16px; background: var(--border); margin-left: 14px; }
-
-.openPetraBtn {
-  width: 100%; padding: 13px;
-  background: #7B6FF0; color: white;
-  font-size: 14px; font-weight: 600;
-  border: none; border-radius: 8px; cursor: pointer;
-  transition: background 0.15s;
-}
-.openPetraBtn:hover { background: #6A5FE0; }
-
-.connectAfterBtn {
-  width: 100%; padding: 13px;
-  background: var(--bg-elevated); color: var(--text);
-  font-size: 13px; font-weight: 500;
-  border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
-  transition: all 0.15s;
-}
-.connectAfterBtn:hover { border-color: var(--accent); color: var(--accent); }
