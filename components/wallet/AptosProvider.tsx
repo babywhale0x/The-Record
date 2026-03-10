@@ -7,7 +7,6 @@ export default function AptosProvider({ children }: { children: ReactNode }) {
   return (
     <AptosWalletAdapterProvider
       autoConnect={true}
-      optInWallets={['Petra', 'Martian', 'Pontem Wallet']}
       dappInfo={{
         aptosConnect: {
           dappName: 'The Record',
