@@ -30,12 +30,45 @@ export function useWallet() {
   return ctx
 }
 
-function getWalletProvider(type: WalletType) {
+// Aptos Wallet Standard — works with Petra, Martian, Pontem via AIP-62
+async function connectViaWalletStandard(walletName: string) {
   if (typeof window === 'undefined') return null
+
+  // AIP-62: wallets register themselves in window.aptos or via the wallet standard event
   const w = window as any
-  if (type === 'petra') return w.petra || w.aptos || null
-  if (type === 'martian') return w.martian || null
-  if (type === 'pontem') return w.pontem || null
+
+  // Try wallet standard first (new Petra uses this)
+  if (w.aptosWallets) {
+    const wallets: any[] = w.aptosWallets.get ? w.aptosWallets.get() : []
+    const wallet = wallets.find((wlt: any) =>
+      wlt.name?.toLowerCase().includes(walletName.toLowerCase())
+    )
+    if (wallet) {
+      const response = await wallet.features['aptos:connect'].connect()
+      return response?.address || response?.account?.address || null
+    }
+  }
+
+  // Fallback: wallet-specific globals (Martian, Pontem still use these)
+  if (walletName === 'martian' && w.martian) {
+    await w.martian.connect()
+    const acc = await w.martian.account()
+    return acc?.address || null
+  }
+
+  if (walletName === 'pontem' && w.pontem) {
+    await w.pontem.connect()
+    const acc = await w.pontem.account()
+    return acc?.address || null
+  }
+
+  // Petra new standard
+  if (walletName === 'petra' && w.aptos) {
+    await w.aptos.connect()
+    const acc = await w.aptos.account()
+    return acc?.address || null
+  }
+
   return null
 }
 
@@ -51,7 +84,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   })
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Restore session from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('the-record-wallet')
     if (saved) {
@@ -84,37 +116,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, connecting: true, error: null }))
 
     try {
-      const provider = getWalletProvider(type)
+      const address = await connectViaWalletStandard(type)
 
-      if (!provider) {
-        // Wallet extension not installed — open web.petra.app for social signup
+      if (!address) {
+        // Extension not found — open Petra web for social signup
         window.open('https://web.petra.app', '_blank')
         setState(s => ({
           ...s,
           connecting: false,
-          error: `${type} wallet not found. We've opened Petra's web app where you can sign in with email or Apple.`,
+          error: `${type} wallet extension not found. We've opened Petra's web app — sign in there with email or Apple, then come back and click "Connect Wallet" again.`,
         }))
         return
       }
 
-      let account: { address: string } | null = null
-
-      if (type === 'petra') {
-        await provider.connect()
-        account = await provider.account()
-      } else if (type === 'martian') {
-        await provider.connect()
-        account = await provider.account()
-      } else if (type === 'pontem') {
-        await provider.connect()
-        account = await provider.account()
-      }
-
-      if (!account?.address) throw new Error('No account returned')
-
-      const address = account.address
       localStorage.setItem('the-record-wallet', JSON.stringify({ address, walletType: type }))
-
       setState(s => ({
         ...s,
         connected: true,
@@ -123,14 +138,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         connecting: false,
         error: null,
       }))
-
       setIsModalOpen(false)
       fetchBalances(address)
     } catch (err: any) {
+      const msg = err?.message || ''
+      const userRejected = msg.toLowerCase().includes('rejected') || msg.toLowerCase().includes('cancel')
       setState(s => ({
         ...s,
         connecting: false,
-        error: err?.message || 'Connection failed. Please try again.',
+        error: userRejected ? 'Connection cancelled.' : 'Connection failed. Please try again.',
       }))
     }
   }, [])

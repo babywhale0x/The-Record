@@ -15,6 +15,7 @@
     "react-dom": "^18",
     "@shelby-protocol/sdk": "latest",
     "@aptos-labs/ts-sdk": "latest",
+
     "@supabase/supabase-js": "^2"
   },
   "devDependencies": {
