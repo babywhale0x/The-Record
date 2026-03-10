@@ -1,7 +1,6 @@
 'use client'
 
 import { AptosWalletAdapterProvider } from '@aptos-labs/wallet-adapter-react'
-import { Network } from '@aptos-labs/ts-sdk'
 import { ReactNode } from 'react'
 
 export default function AptosProvider({ children }: { children: ReactNode }) {
@@ -15,7 +14,7 @@ export default function AptosProvider({ children }: { children: ReactNode }) {
         },
       }}
       dappConfig={{
-        network: Network.TESTNET,
+        network: 'testnet' as any,
         aptosApiKey: process.env.NEXT_PUBLIC_APTOS_API_KEY,
       }}
       onError={(error) => {
