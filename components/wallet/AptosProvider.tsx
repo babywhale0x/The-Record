@@ -8,9 +8,15 @@ export default function AptosProvider({ children }: { children: ReactNode }) {
   return (
     <AptosWalletAdapterProvider
       autoConnect={true}
+      optInWallets={['Petra', 'Martian', 'Pontem Wallet']}
+      dappInfo={{
+        aptosConnect: {
+          dappName: 'The Record',
+        },
+      }}
       dappConfig={{
         network: Network.TESTNET,
-        aptosConnectDappId: 'the-record', // enables Aptos Connect social login
+        aptosApiKey: process.env.NEXT_PUBLIC_APTOS_API_KEY,
       }}
       onError={(error) => {
         console.error('Wallet error:', error)
