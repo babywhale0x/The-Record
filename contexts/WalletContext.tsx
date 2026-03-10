@@ -1,6 +1,5 @@
 'use client'
 
-// This is now a thin wrapper around @aptos-labs/wallet-adapter-react
-// Re-exports everything our app needs from the official adapter
+// Wallet state is handled by @aptos-labs/wallet-adapter-react
+// Import useWallet directly from there in your components
 export { useWallet } from '@aptos-labs/wallet-adapter-react'
-export type { WalletName } from '@aptos-labs/wallet-adapter-react'
