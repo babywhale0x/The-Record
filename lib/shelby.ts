@@ -239,8 +239,6 @@ export async function getBlob(
   }
 }
 
-export const shelby = { uploadRecord, uploadArticle, uploadDocument, getBlob, configFromEnv: shelbyConfigFromEnv }
-export default shelby
 
 // ─── Stub exports for balance, citation, renew ───────────────────────────────
 // These are used by /api/balance, /api/citation, /api/renew
@@ -292,5 +290,5 @@ export async function renewBlob(
   return uploadToShelby(newBlobName, existing.data, config)
 }
 
-// Add to default export
-Object.assign(shelby, { getAccountBalance, issueCitation, renewBlob })
+export const shelby = { uploadRecord, uploadArticle, uploadDocument, getBlob, getAccountBalance, issueCitation, renewBlob, configFromEnv: shelbyConfigFromEnv }
+export default shelby
