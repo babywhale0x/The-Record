@@ -29,13 +29,14 @@ export async function POST(req: NextRequest) {
   }
 
   let article: ArticlePayload & {
-    contentType?: string
-    tags?: string[]
-    priceView?: number
-    priceCite?: number
-    priceLicense?: number
-    publisherAddress?: string
-  }
+  excerpt?: string
+  contentType?: string
+  tags?: string[]
+  priceView?: number
+  priceCite?: number
+  priceLicense?: number
+  publisherAddress?: string
+}
   try {
     article = JSON.parse(articleJson)
   } catch {
