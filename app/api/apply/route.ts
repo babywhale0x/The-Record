@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
         bio: body.bio,
         content_plan: body.contentPlan,
         wallet_ready: body.walletReady || null,
+        aptos_address: body.aptosAddress || null,
         status: 'pending',
         submitted_at: new Date().toISOString(),
       })
