@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useWallet } from '@aptos-labs/wallet-adapter-react'
 import { CONTENT_TYPE_LIST } from '@/lib/content-types'
 import styles from './publish.module.css'
 
@@ -7,6 +8,7 @@ type Step = 1 | 2 | 3
 type Status = 'idle' | 'submitting' | 'success'
 
 export default function PublishPage() {
+  const { account } = useWallet()
   const [step, setStep] = useState<Step>(1)
   const [status, setStatus] = useState<Status>('idle')
   const [form, setForm] = useState({
@@ -31,7 +33,7 @@ export default function PublishPage() {
       const res = await fetch('/api/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, aptosAddress: account?.address?.toString() || '' }),
       })
       if (!res.ok) {
         const { error } = await res.json().catch(() => ({ error: 'Submission failed' }))
