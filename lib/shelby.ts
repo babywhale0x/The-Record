@@ -241,3 +241,56 @@ export async function getBlob(
 
 export const shelby = { uploadRecord, uploadArticle, uploadDocument, getBlob, configFromEnv: shelbyConfigFromEnv }
 export default shelby
+
+// ─── Stub exports for balance, citation, renew ───────────────────────────────
+// These are used by /api/balance, /api/citation, /api/renew
+
+export async function getAccountBalance(config: ShelbyConfig): Promise<{ apt: number; shelbyUsd: number }> {
+  try {
+    const { Aptos, AptosConfig, Network } = await import('@aptos-labs/ts-sdk')
+    const sdkNetwork = config.network === 'shelbynet' ? Network.SHELBYNET : Network.TESTNET
+    const aptos = new Aptos(new AptosConfig({ network: sdkNetwork }))
+    const resources = await aptos.getAccountResources({ accountAddress: config.accountAddress })
+    const aptResource = resources.find((r: any) => r.type === '0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>')
+    const aptRaw = (aptResource?.data as any)?.coin?.value || '0'
+    return { apt: parseInt(aptRaw) / 1e8, shelbyUsd: 0 }
+  } catch {
+    return { apt: 0, shelbyUsd: 0 }
+  }
+}
+
+export async function issueCitation(
+  params: {
+    recordSlug: string
+    recordTitle: string
+    citerAddress: string
+    recordReceipt: { blobName: string; aptosTxHash: string; contentHash: string }
+  },
+  config: ShelbyConfig
+): Promise<{ receipt: UploadReceipt; citationId: string }> {
+  const citationId = require('crypto').randomBytes(8).toString('hex').toUpperCase()
+  const timestamp = Date.now()
+  const blobName = `citations/${params.recordSlug}/${timestamp}-cite.json`
+  const citationData = JSON.stringify({
+    citationId,
+    ...params,
+    issuedAt: new Date(timestamp).toISOString(),
+  })
+  const data = new TextEncoder().encode(citationData)
+  const receipt = await uploadToShelby(blobName, data, config)
+  return { receipt, citationId }
+}
+
+export async function renewBlob(
+  blobName: string,
+  config: ShelbyConfig,
+  ttlDays = 365
+): Promise<UploadReceipt> {
+  // Re-fetch and re-upload with a fresh TTL
+  const existing = await getBlob(blobName, config)
+  const newBlobName = blobName.replace(/\/\d+(-|$)/, `/${Date.now()}$1`)
+  return uploadToShelby(newBlobName, existing.data, config)
+}
+
+// Add to default export
+Object.assign(shelby, { getAccountBalance, issueCitation, renewBlob })
