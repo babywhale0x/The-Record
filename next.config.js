@@ -2,7 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Allow the Shelby CDN domain for image/asset optimisation
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.b-cdn.net' },
@@ -11,7 +10,6 @@ const nextConfig = {
     ],
   },
 
-  // Headers for blob streaming routes
   async headers() {
     return [
       {
@@ -23,6 +21,28 @@ const nextConfig = {
         ],
       },
     ]
+  },
+
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // These Node.js-only packages must never be bundled for the browser
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        got: false,
+        'node-fetch': false,
+        http: false,
+        https: false,
+        net: false,
+        tls: false,
+        fs: false,
+        crypto: false,
+        stream: false,
+        path: false,
+        os: false,
+        zlib: false,
+      }
+    }
+    return config
   },
 }
 
