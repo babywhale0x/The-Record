@@ -48,6 +48,16 @@ export interface BlobContent {
   totalBytes?: number
 }
 
+
+export interface VerificationResult {
+  verified: boolean
+  onChainHash: string
+  currentHash: string
+  intact: boolean
+  txDetails: { hash: string; timestamp: number; sender: string; gasUsed: number } | null
+  verifiedAt: number
+}
+
 export interface RecordPayload {
   slug: string
   title: string
@@ -290,5 +300,31 @@ export async function renewBlob(
   return uploadToShelby(newBlobName, existing.data, config)
 }
 
-export const shelby = { uploadRecord, uploadArticle, uploadDocument, getBlob, getAccountBalance, issueCitation, renewBlob, configFromEnv: shelbyConfigFromEnv }
+export async function verifyDocument(
+  params: { blobName: string; contentHash: string; aptosTxHash: string },
+  config: ShelbyConfig
+): Promise<VerificationResult> {
+  try {
+    const blob = await getBlob(params.blobName, config)
+    const currentHash = sha256Hex(blob.data)
+    const intact = currentHash === params.contentHash
+    return {
+      verified: intact,
+      onChainHash: params.contentHash,
+      currentHash,
+      intact,
+      txDetails: null,
+      verifiedAt: Date.now(),
+    }
+  } catch (err: any) {
+    throw new ShelbyError(err?.message || 'Verification failed')
+  }
+}
+
+
+
+
+
+
+export const shelby = { uploadRecord, uploadArticle, uploadDocument, getBlob, getAccountBalance, issueCitation, renewBlob, verifyDocument, configFromEnv: shelbyConfigFromEnv }
 export default shelby
