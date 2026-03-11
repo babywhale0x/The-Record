@@ -52,35 +52,38 @@ export async function GET(
   const customRange = url.searchParams.get('range')
 
   // Determine byte range to request
-  let range: string | undefined
+  let rangeHeader: string | undefined
+  let rangeObj: { start: number; end: number } | undefined
   if (isPreview) {
-    range = `bytes=0-${PREVIEW_BYTES - 1}`
+    rangeHeader = `bytes=0-${PREVIEW_BYTES - 1}`
+    rangeObj = { start: 0, end: PREVIEW_BYTES - 1 }
   } else if (customRange) {
-    // Validate range format
     if (!/^bytes=\d+-\d*$/.test(customRange)) {
       return NextResponse.json({ error: 'Invalid range format' }, { status: 400 })
     }
-    range = customRange
+    rangeHeader = customRange
+    const [, s, e] = customRange.match(/bytes=(\d+)-(\d*)/) ?? []
+    rangeObj = { start: parseInt(s), end: e ? parseInt(e) : Number.MAX_SAFE_INTEGER }
   }
 
   try {
-    const blob = await getBlob(blobName, config, range ? { range } : undefined)
+    const blob = await getBlob(blobName, config, rangeObj)
 
     const headers: Record<string, string> = {
       'Content-Type': blob.contentType,
-      'Cache-Control': 'private, max-age=300', // 5 min client cache
+      'Cache-Control': 'private, max-age=300',
       'X-Blob-Name': blobName,
     }
 
     if (blob.totalBytes) {
       headers['X-Total-Size'] = String(blob.totalBytes)
     }
-    if (range) {
-      headers['Content-Range'] = `${range.replace('=', ' ')}/${blob.totalBytes ?? '*'}`
+    if (rangeHeader) {
+      headers['Content-Range'] = `${rangeHeader.replace('=', ' ')}/${blob.totalBytes ?? '*'}`
     }
 
     return new NextResponse(Buffer.from(blob.data), {
-      status: range ? 206 : 200,
+      status: rangeObj ? 206 : 200,
       headers,
     })
   } catch (err) {
