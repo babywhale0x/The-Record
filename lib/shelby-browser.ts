@@ -35,6 +35,7 @@ export async function uploadFileFromBrowser(
   file: File,
   accountAddress: string,
   signAndSubmitTransaction: (tx: any) => Promise<{ hash: string }>,
+  apiKey: string,
   onProgress?: ProgressCallback
 ): Promise<BrowserUploadResult> {
   const { Network, Aptos, AptosConfig, AccountAddress } = await import('@aptos-labs/ts-sdk')
@@ -52,7 +53,7 @@ export async function uploadFileFromBrowser(
   const network = Network.CUSTOM
   const shelbyRpcUrl = 'https://api.shelbynet.shelby.xyz/shelby'
   const aptosNodeUrl = 'https://api.shelbynet.shelby.xyz/v1'
-  const apiKey = process.env.NEXT_PUBLIC_APTOS_API_KEY
+  // NEXT_PUBLIC_ vars must be referenced directly (not via variable) for Next.js to inline them
 
   // ── Step 1: Encode ─────────────────────────────────────────────────────────
   onProgress?.({ stage: 'encoding', message: `Encoding ${file.name}…` })
@@ -80,7 +81,7 @@ export async function uploadFileFromBrowser(
   const aptosClient = new Aptos(new AptosConfig({
     network,
     fullnode: aptosNodeUrl,
-    ...(apiKey ? { clientConfig: { HEADERS: { Authorization: `Bearer ${apiKey}` } } } : {}),
+    ...(apiKey ? { clientConfig: { API_KEY: apiKey } } : {}),
   }))
   await aptosClient.waitForTransaction({ transactionHash: submitted.hash })
 

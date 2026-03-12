@@ -92,6 +92,7 @@ export default function DashboardPage() {
           doc.file,
           address!,
           signAndSubmitTransaction,
+          process.env.NEXT_PUBLIC_APTOS_API_KEY ?? '',
           (p: BrowserUploadProgress) => setUploadProgress(p.message)
         )
         documentReceipts.push({ ...receipt, originalName: doc.file.name })
