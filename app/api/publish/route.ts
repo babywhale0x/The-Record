@@ -10,37 +10,46 @@ import { supabaseAdmin } from '@/lib/supabase'
 
 export const runtime = 'nodejs'
 
+/**
+ * POST /api/publish
+ * 
+ * Accepts JSON only — no file uploads (files go direct from browser to Shelby).
+ * Body: { article: ArticlePayload, documentReceipts?: BrowserUploadResult[] }
+ */
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader?.startsWith('Bearer ')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let formData: FormData
-  try {
-    formData = await req.formData()
-  } catch {
-    return NextResponse.json({ error: 'Invalid form data' }, { status: 400 })
+  let body: {
+    article: ArticlePayload & {
+      contentType?: string
+      tags?: string[]
+      priceView?: number
+      priceCite?: number
+      priceLicense?: number
+      publisherAddress?: string
+    }
+    documentReceipts?: Array<{
+      blobName: string
+      aptosTxHash: string
+      contentHash: string
+      originalName: string
+      expiresAt: string
+    }>
   }
 
-  const articleJson = formData.get('article')
-  if (!articleJson || typeof articleJson !== 'string') {
-    return NextResponse.json({ error: 'Missing article field' }, { status: 400 })
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  let article: ArticlePayload & {
-  excerpt?: string
-  contentType?: string
-  tags?: string[]
-  priceView?: number
-  priceCite?: number
-  priceLicense?: number
-  publisherAddress?: string
-}
-  try {
-    article = JSON.parse(articleJson)
-  } catch {
-    return NextResponse.json({ error: 'Invalid article JSON' }, { status: 400 })
+  const { article, documentReceipts = [] } = body
+
+  if (!article?.title || !article?.body) {
+    return NextResponse.json({ error: 'Missing article title or body' }, { status: 400 })
   }
 
   let config
@@ -51,7 +60,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
   }
 
-  // Upload to Shelby
+  // Upload article text to Shelby via platform wallet (server-side, small JSON)
   let articleReceipt: UploadReceipt
   try {
     articleReceipt = await shelby.uploadArticle(article, config, (stage, progress) => {
@@ -63,49 +72,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 502 })
   }
 
-  // Upload source documents
-  const documentReceipts: Array<UploadReceipt & { originalName: string }> = []
-  const files = formData.getAll('documents') as File[]
-
-  for (const file of files) {
-    try {
-      const arrayBuf = await file.arrayBuffer()
-      const data = new Uint8Array(arrayBuf)
-      const receipt = await shelby.uploadDocument(
-        {
-          name: file.name,
-          mimeType: file.type || 'application/octet-stream',
-          data,
-          sourceDescription: `Uploaded with article: ${article.title}`,
-          articleSlug: article.slug,
-        },
-        config,
-        (stage, progress) => {
-          console.log(`[publish] doc "${file.name}" ${stage}${progress != null ? ` ${progress}%` : ''}`)
-        }
-      )
-      documentReceipts.push({ ...receipt, originalName: file.name })
-    } catch (err) {
-      console.error(`[publish] Document upload error (${file.name}):`, err)
-      documentReceipts.push({
-        originalName: file.name,
-        blobName: '',
-        aptosTxHash: '',
-        contentHash: '',
-        committedAt: Date.now(),
-        explorerUrl: '',
-        aptosExplorerUrl: '',
-        expiresAt: '',
-        // @ts-expect-error
-        error: err instanceof ShelbyError ? err.message : 'Upload failed',
-      })
-    }
-  }
-
   // Save to Supabase
   if (supabaseAdmin) {
     try {
-      // Find or create publisher
       let publisherId: string | null = null
       if (article.publisherAddress) {
         const { data: pub } = await supabaseAdmin
@@ -116,7 +85,6 @@ export async function POST(req: NextRequest) {
         publisherId = pub?.id || null
       }
 
-      // Insert record
       const expiresAt = articleReceipt.expiresAt
         ? new Date(articleReceipt.expiresAt).toISOString()
         : null
@@ -145,10 +113,10 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (recordError) {
-        console.error('[publish] Supabase insert error:', recordError)
+        console.error('[publish] Supabase record insert error:', recordError)
       }
 
-      // Insert source documents
+      // Save document receipts from browser uploads
       if (record && documentReceipts.length > 0) {
         const docRows = documentReceipts
           .filter(d => d.blobName)
@@ -168,7 +136,6 @@ export async function POST(req: NextRequest) {
       }
     } catch (err) {
       console.error('[publish] Supabase save error:', err)
-      // Non-fatal — Shelby upload succeeded, DB save failed
     }
   }
 

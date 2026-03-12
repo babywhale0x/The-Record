@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useWallet } from '@aptos-labs/wallet-adapter-react'
 import { useWalletModal } from '@/components/wallet/WalletModal'
 import { CONTENT_TYPE_LIST } from '@/lib/content-types'
+import { uploadFileFromBrowser, type BrowserUploadProgress } from '@/lib/shelby-browser'
 import styles from './dashboard.module.css'
 
 type View = 'overview' | 'new-record' | 'my-records'
@@ -24,7 +25,7 @@ const EMPTY_FORM: RecordForm = {
 }
 
 export default function DashboardPage() {
-  const { connected, account } = useWallet()
+  const { connected, account, signAndSubmitTransaction } = useWallet()
   const { open } = useWalletModal()
   const [publisherStatus, setPublisherStatus] = useState<PublisherStatus>('loading')
   const [view, setView] = useState<View>('overview')
@@ -34,6 +35,7 @@ export default function DashboardPage() {
   const [status, setStatus] = useState<PublishStatus>('idle')
   const [publishedSlug, setPublishedSlug] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const [uploadProgress, setUploadProgress] = useState<string>('')
   const [myRecords, setMyRecords] = useState<any[]>([])
   const [loadingRecords, setLoadingRecords] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -73,27 +75,60 @@ export default function DashboardPage() {
   }
 
   const handlePublish = async () => {
-    setStatus('uploading'); setErrorMsg('')
+    setStatus('uploading'); setErrorMsg(''); setUploadProgress('')
     try {
       const slug = form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80)
-      const fd = new FormData()
-      fd.append('article', JSON.stringify({
-        slug, title: form.title, excerpt: form.excerpt, body: form.body,
-        contentType: form.contentType,
-        tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
-        priceView: parseFloat(form.priceView),
-        priceCite: parseFloat(form.priceCite),
-        priceLicense: parseFloat(form.priceLicense),
-        publisherAddress: address || '',
-      }))
-      for (const doc of docs) fd.append('documents', doc.file)
+
+      // Phase 1: Upload documents directly from browser → Shelby (bypasses Vercel 4.5MB limit)
+      const documentReceipts: Array<{
+        blobName: string; aptosTxHash: string; contentHash: string
+        originalName: string; expiresAt: string
+      }> = []
+
+      for (let i = 0; i < docs.length; i++) {
+        const doc = docs[i]
+        setUploadProgress(`Uploading document ${i + 1} of ${docs.length}: ${doc.file.name}`)
+        const receipt = await uploadFileFromBrowser(
+          doc.file,
+          address!,
+          signAndSubmitTransaction,
+          (p: BrowserUploadProgress) => setUploadProgress(p.message)
+        )
+        documentReceipts.push({ ...receipt, originalName: doc.file.name })
+      }
+
+      // Phase 2: Send article JSON + document receipts to /api/publish (no files, no size limit hit)
+      setUploadProgress('Archiving article to Shelby…')
       const res = await fetch('/api/publish', {
-        method: 'POST', headers: { Authorization: 'Bearer dashboard' }, body: fd,
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer dashboard',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          article: {
+            slug, title: form.title, excerpt: form.excerpt, body: form.body,
+            contentType: form.contentType,
+            tags: form.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
+            priceView: parseFloat(form.priceView),
+            priceCite: parseFloat(form.priceCite),
+            priceLicense: parseFloat(form.priceLicense),
+            publisherAddress: address || '',
+          },
+          documentReceipts,
+        }),
       })
-      if (!res.ok) { const { error } = await res.json().catch(() => ({ error: 'Publish failed' })); throw new Error(error) }
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: 'Publish failed' }))
+        throw new Error(error)
+      }
       setPublishedSlug(slug); setStatus('success')
-      setForm(EMPTY_FORM); setDocs([]); setPublishStep('write')
-    } catch (err: any) { setErrorMsg(err?.message || 'Something went wrong'); setStatus('error') }
+      setForm(EMPTY_FORM); setDocs([]); setPublishStep('write'); setUploadProgress('')
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Something went wrong')
+      setStatus('error')
+      setUploadProgress('')
+    }
   }
 
   // ── Not connected ──────────────────────────────────────────────────────────
@@ -375,6 +410,9 @@ export default function DashboardPage() {
                 </div>
               </div>
               {status === 'error' && <div className={styles.errorBox}>⚠ {errorMsg}</div>}
+              {status === 'uploading' && uploadProgress && (
+                <div className={styles.progressBox}>⛓ {uploadProgress}</div>
+              )}
               <div className={styles.formNav}>
                 <button className={styles.backBtn} onClick={()=>setPublishStep('pricing')}>← Back</button>
                 <button className={styles.publishBtn} onClick={handlePublish} disabled={status==='uploading'}>
