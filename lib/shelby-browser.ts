@@ -37,7 +37,7 @@ export async function uploadFileFromBrowser(
   signAndSubmitTransaction: (tx: any) => Promise<{ hash: string }>,
   onProgress?: ProgressCallback
 ): Promise<BrowserUploadResult> {
-  const { Network, Aptos, AptosConfig } = await import('@aptos-labs/ts-sdk')
+  const { Network, Aptos, AptosConfig, AccountAddress } = await import('@aptos-labs/ts-sdk')
   const {
     createDefaultErasureCodingProvider,
     generateCommitments,
@@ -45,6 +45,8 @@ export async function uploadFileFromBrowser(
     ShelbyBlobClient,
     ShelbyClient,
   } = await import('@shelby-protocol/sdk/browser')
+
+  const aptosAccountAddress = AccountAddress.from(accountAddress)
 
   const network = Network.TESTNET
   const apiKey = process.env.NEXT_PUBLIC_APTOS_API_KEY
@@ -60,7 +62,7 @@ export async function uploadFileFromBrowser(
   const expirationMicros = (Date.now() + 30 * 24 * 60 * 60 * 1000) * 1000
 
   const payload = ShelbyBlobClient.createRegisterBlobPayload({
-    account: accountAddress,
+    account: aptosAccountAddress,
     blobName: file.name,
     blobMerkleRoot: commitments.blob_merkle_root,
     numChunksets: expectedTotalChunksets(commitments.raw_data_size),
@@ -86,7 +88,7 @@ export async function uploadFileFromBrowser(
   })
 
   await shelbyClient.rpc.putBlob({
-    account: accountAddress,
+    account: aptosAccountAddress,
     blobName: file.name,
     blobData: new Uint8Array(data),
   })
