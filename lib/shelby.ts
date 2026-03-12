@@ -144,9 +144,10 @@ async function uploadToShelby(
 
     onProgress?.('uploading', 0)
 
-    // Upload — correct SDK method per docs
-    const result = await shelbyClient.upload({
+    // Upload — cast to any to bypass SDK type version mismatch
+    const result = await (shelbyClient as any).upload({
       account,
+      signer: account,
       blobData: Buffer.from(data),
       blobName,
       expirationMicros: expiryMicros(),
