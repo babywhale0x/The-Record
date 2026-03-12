@@ -146,7 +146,7 @@ async function uploadToShelby(
 
     // Upload — correct SDK method per docs
     const result = await shelbyClient.upload({
-      signer: account,
+      account,
       blobData: Buffer.from(data),
       blobName,
       expirationMicros: expiryMicros(),
@@ -228,12 +228,12 @@ export async function getBlob(
     const blob = await shelbyClient.download({
       account: config.accountAddress,
       blobName,
-    })
+    }) as any
 
     // Collect stream
     const chunks: Buffer[] = []
     for await (const chunk of blob.stream) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as any))
     }
     const data = new Uint8Array(Buffer.concat(chunks))
 
