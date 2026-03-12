@@ -2,6 +2,18 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  // Copy .wasm files from node_modules to the build output
+  outputFileTracingIncludes: {
+    '/api/publish': [
+      './node_modules/@shelby-protocol/clay-codes/dist/**/*.wasm',
+      './node_modules/@shelby-protocol/**/*.wasm',
+    ],
+    '/api/stream': [
+      './node_modules/@shelby-protocol/clay-codes/dist/**/*.wasm',
+      './node_modules/@shelby-protocol/**/*.wasm',
+    ],
+  },
+
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.b-cdn.net' },
@@ -24,6 +36,9 @@ const nextConfig = {
   },
 
   webpack: (config, { isServer }) => {
+    // Handle .wasm files
+    config.experiments = { ...config.experiments, asyncWebAssembly: true }
+
     if (!isServer) {
       // These Node.js-only packages must never be bundled for the browser
       config.resolve.fallback = {
