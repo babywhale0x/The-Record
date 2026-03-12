@@ -126,15 +126,14 @@ async function uploadToShelby(
 
   try {
     const { ShelbyNodeClient } = await import('@shelby-protocol/sdk/node')
-    const { Ed25519Account, Ed25519PrivateKey, Network } = await import('@aptos-labs/ts-sdk')
+    const { Account, Ed25519PrivateKey, Network } = await import('@aptos-labs/ts-sdk')
 
     // Map our network string to SDK Network enum
-    const sdkNetwork = config.network === 'shelbynet' ? Network.SHELBYNET : Network.TESTNET
+    const sdkNetwork = config.network === 'shelbynet' ? ((Network as any).SHELBYNET ?? Network.TESTNET) : Network.TESTNET
 
-    // Build account from private key
-    const account = new Ed25519Account({
-      privateKey: new Ed25519PrivateKey(config.privateKey),
-    })
+    // Correct pattern per ts-sdk-account skill: Account.fromPrivateKey({ privateKey })
+    const privateKey = new Ed25519PrivateKey(config.privateKey)
+    const account = Account.fromPrivateKey({ privateKey })
 
     // Init client — only needs network + apiKey per docs
     const shelbyClient = new ShelbyNodeClient({
@@ -220,7 +219,7 @@ export async function getBlob(
     const { ShelbyNodeClient } = await import('@shelby-protocol/sdk/node')
     const { Network } = await import('@aptos-labs/ts-sdk')
 
-    const sdkNetwork = config.network === 'shelbynet' ? Network.SHELBYNET : Network.TESTNET
+    const sdkNetwork = config.network === 'shelbynet' ? ((Network as any).SHELBYNET ?? Network.TESTNET) : Network.TESTNET
     const shelbyClient = new ShelbyNodeClient({
       network: sdkNetwork,
       ...(config.apiKey ? { apiKey: config.apiKey } : {}),
@@ -257,7 +256,7 @@ export async function getBlob(
 export async function getAccountBalance(config: ShelbyConfig): Promise<{ apt: number; shelbyUsd: number }> {
   try {
     const { Aptos, AptosConfig, Network } = await import('@aptos-labs/ts-sdk')
-    const sdkNetwork = config.network === 'shelbynet' ? Network.SHELBYNET : Network.TESTNET
+    const sdkNetwork = config.network === 'shelbynet' ? ((Network as any).SHELBYNET ?? Network.TESTNET) : Network.TESTNET
     const aptos = new Aptos(new AptosConfig({ network: sdkNetwork }))
     const resources = await aptos.getAccountResources({ accountAddress: config.accountAddress })
     const aptResource = resources.find((r: any) => r.type === '0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>')
@@ -277,7 +276,8 @@ export async function issueCitation(
   },
   config: ShelbyConfig
 ): Promise<{ receipt: UploadReceipt; citationId: string }> {
-  const citationId = require('crypto').randomBytes(8).toString('hex').toUpperCase()
+  const { randomBytes } = await import('crypto')
+  const citationId = randomBytes(8).toString('hex').toUpperCase()
   const timestamp = Date.now()
   const blobName = `citations/${params.recordSlug}/${timestamp}-cite.json`
   const citationData = JSON.stringify({
