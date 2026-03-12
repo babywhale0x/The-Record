@@ -280,6 +280,7 @@ export async function getAccountBalance(config: ShelbyConfig): Promise<{ apt: nu
     const aptos = new Aptos(new AptosConfig({
       network: Network.CUSTOM,
       fullnode: aptosNodeUrl,
+      ...(config.apiKey ? { clientConfig: { HEADERS: { Authorization: `Bearer ${config.apiKey}` } } } : {}),
     }))
     const resources = await aptos.getAccountResources({ accountAddress: config.accountAddress })
     const aptResource = resources.find((r: any) => r.type === '0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>')

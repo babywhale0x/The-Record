@@ -80,7 +80,7 @@ export async function uploadFileFromBrowser(
   const aptosClient = new Aptos(new AptosConfig({
     network,
     fullnode: aptosNodeUrl,
-    ...(apiKey ? { clientConfig: { API_KEY: apiKey } } : {}),
+    ...(apiKey ? { clientConfig: { HEADERS: { Authorization: `Bearer ${apiKey}` } } } : {}),
   }))
   await aptosClient.waitForTransaction({ transactionHash: submitted.hash })
 
