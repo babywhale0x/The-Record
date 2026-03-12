@@ -79,26 +79,7 @@ export default function DashboardPage() {
     try {
       const slug = form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80)
 
-      // Phase 1: Upload documents directly from browser → Shelby (bypasses Vercel 4.5MB limit)
-      const documentReceipts: Array<{
-        blobName: string; aptosTxHash: string; contentHash: string
-        originalName: string; expiresAt: string
-      }> = []
-
-      for (let i = 0; i < docs.length; i++) {
-        const doc = docs[i]
-        setUploadProgress(`Uploading document ${i + 1} of ${docs.length}: ${doc.file.name}`)
-        const receipt = await uploadFileFromBrowser(
-          doc.file,
-          address!,
-          signAndSubmitTransaction,
-          process.env.NEXT_PUBLIC_APTOS_API_KEY ?? '',
-          (p: BrowserUploadProgress) => setUploadProgress(p.message)
-        )
-        documentReceipts.push({ ...receipt, originalName: doc.file.name })
-      }
-
-      // Phase 2: Send article JSON + document receipts to /api/publish (no files, no size limit hit)
+      // Send article JSON to /api/publish (documents skipped for now - shelbynet CORS blocks browser direct upload)
       setUploadProgress('Archiving article to Shelby…')
       const res = await fetch('/api/publish', {
         method: 'POST',
@@ -116,7 +97,7 @@ export default function DashboardPage() {
             priceLicense: parseFloat(form.priceLicense),
             publisherAddress: address || '',
           },
-          documentReceipts,
+          documentReceipts: [], // documents uploaded separately via server proxy
         }),
       })
       if (!res.ok) {
