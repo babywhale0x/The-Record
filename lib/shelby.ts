@@ -100,7 +100,7 @@ function aptosExplorerUrl(network: ShelbyNetwork, txHash: string): string {
 }
 
 export function shelbyConfigFromEnv(): ShelbyConfig {
-  const network = (process.env.SHELBY_NETWORK as ShelbyNetwork) || 'shelbynet'
+  const network = (process.env.SHELBY_NETWORK as ShelbyNetwork) || 'testnet'
   const privateKey = process.env.APTOS_PRIVATE_KEY || ''
   const accountAddress = process.env.APTOS_ACCOUNT_ADDRESS || ''
   if (!privateKey) throw new ShelbyError('APTOS_PRIVATE_KEY is not set')
@@ -130,12 +130,12 @@ async function uploadToShelby(
 
     // Map our network string to SDK Network enum
     // shelbynet is Shelby's own chain - use custom URLs, not Aptos Network enum
-    const sdkNetwork = Network.CUSTOM
+    const sdkNetwork = Network.TESTNET
     const shelbyRpcUrl = config.network === 'shelbynet'
-      ? 'https://api.shelbynet.shelby.xyz/shelby'
+      ? 'https://api.testnet.shelby.xyz/shelby'
       : 'https://api.testnet.shelby.xyz/shelby'
     const aptosNodeUrl = config.network === 'shelbynet'
-      ? 'https://api.shelbynet.shelby.xyz/v1'
+      ? 'https://api.testnet.aptoslabs.com/v1'
       : 'https://api.testnet.aptoslabs.com/v1'
     // Correct pattern per ts-sdk-account skill: Account.fromPrivateKey({ privateKey })
     const privateKey = new Ed25519PrivateKey(config.privateKey)
@@ -147,7 +147,7 @@ async function uploadToShelby(
       ...(config.apiKey ? { apiKey: config.apiKey } : {}),
       nodeUrl: aptosNodeUrl,
       shelbyRpcUrl,
-      indexer: { endpoint: 'https://api.shelbynet.shelby.xyz/v1/graphql' },
+      indexer: { endpoint: 'https://api.testnet.aptoslabs.com/v1/graphql' },
     } as any)
 
     onProgress?.('uploading', 0)
@@ -229,19 +229,19 @@ export async function getBlob(
     const { Network } = await import('@aptos-labs/ts-sdk')
 
     // shelbynet is Shelby's own chain - use custom URLs, not Aptos Network enum
-    const sdkNetwork = Network.CUSTOM
+    const sdkNetwork = Network.TESTNET
     const shelbyRpcUrl = config.network === 'shelbynet'
-      ? 'https://api.shelbynet.shelby.xyz/shelby'
+      ? 'https://api.testnet.shelby.xyz/shelby'
       : 'https://api.testnet.shelby.xyz/shelby'
     const aptosNodeUrl = config.network === 'shelbynet'
-      ? 'https://api.shelbynet.shelby.xyz/v1'
+      ? 'https://api.testnet.aptoslabs.com/v1'
       : 'https://api.testnet.aptoslabs.com/v1'
     const shelbyClient = new ShelbyNodeClient({
       network: sdkNetwork,
       ...(config.apiKey ? { apiKey: config.apiKey } : {}),
       nodeUrl: aptosNodeUrl,
       shelbyRpcUrl,
-      indexer: { endpoint: 'https://api.shelbynet.shelby.xyz/v1/graphql' },
+      indexer: { endpoint: 'https://api.testnet.aptoslabs.com/v1/graphql' },
     } as any)
 
     const blob = await shelbyClient.download({
@@ -277,7 +277,7 @@ export async function getAccountBalance(config: ShelbyConfig): Promise<{ apt: nu
     const { Aptos, AptosConfig, Network } = await import('@aptos-labs/ts-sdk')
     // shelbynet is Shelby's own chain - use custom URLs, not Aptos Network enum
     const aptosNodeUrl = config.network === 'shelbynet'
-      ? 'https://api.shelbynet.shelby.xyz/v1'
+      ? 'https://api.testnet.aptoslabs.com/v1'
       : 'https://api.testnet.aptoslabs.com/v1'
     const aptos = new Aptos(new AptosConfig({
       network: Network.CUSTOM,

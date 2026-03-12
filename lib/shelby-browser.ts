@@ -49,10 +49,9 @@ export async function uploadFileFromBrowser(
 
   const aptosAccountAddress = AccountAddress.from(accountAddress)
 
-  // shelbynet is Shelby's dev network - isolated from Aptos testnet
-  const network = Network.CUSTOM
-  const shelbyRpcUrl = 'https://api.shelbynet.shelby.xyz/shelby'
-  const aptosNodeUrl = 'https://api.shelbynet.shelby.xyz/v1'
+  const network = Network.TESTNET
+  const shelbyRpcUrl = 'https://api.testnet.shelby.xyz/shelby'
+  const aptosNodeUrl = 'https://api.testnet.aptoslabs.com/v1'
   // NEXT_PUBLIC_ vars must be referenced directly (not via variable) for Next.js to inline them
 
   // ── Step 1: Encode ─────────────────────────────────────────────────────────
@@ -80,7 +79,6 @@ export async function uploadFileFromBrowser(
   // Wait for confirmation
   const aptosClient = new Aptos(new AptosConfig({
     network,
-    fullnode: aptosNodeUrl,
     ...(apiKey ? { clientConfig: { API_KEY: apiKey } } : {}),
   }))
   await aptosClient.waitForTransaction({ transactionHash: submitted.hash })
@@ -88,10 +86,8 @@ export async function uploadFileFromBrowser(
   // ── Step 3: RPC upload ─────────────────────────────────────────────────────
   onProgress?.({ stage: 'uploading', message: `Uploading ${file.name} to Shelby…`, progress: 0 })
 
-  const shelbyClient = new (ShelbyClient as any)({
+  const shelbyClient = new ShelbyClient({
     network,
-    shelbyRpcUrl,
-    nodeUrl: aptosNodeUrl,
     ...(apiKey ? { apiKey } : {}),
   })
 
