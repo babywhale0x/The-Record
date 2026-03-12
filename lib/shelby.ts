@@ -147,6 +147,7 @@ async function uploadToShelby(
       ...(config.apiKey ? { apiKey: config.apiKey } : {}),
       nodeUrl: aptosNodeUrl,
       shelbyRpcUrl,
+      indexer: { endpoint: 'https://api.shelbynet.shelby.xyz/v1/graphql' },
     } as any)
 
     onProgress?.('uploading', 0)
@@ -240,6 +241,7 @@ export async function getBlob(
       ...(config.apiKey ? { apiKey: config.apiKey } : {}),
       nodeUrl: aptosNodeUrl,
       shelbyRpcUrl,
+      indexer: { endpoint: 'https://api.shelbynet.shelby.xyz/v1/graphql' },
     } as any)
 
     const blob = await shelbyClient.download({
