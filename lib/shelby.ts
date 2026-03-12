@@ -146,7 +146,7 @@ async function uploadToShelby(
 
     // Upload — correct SDK method per docs
     const result = await shelbyClient.upload({
-      account,
+      signer: account,
       blobData: Buffer.from(data),
       blobName,
       expirationMicros: expiryMicros(),
