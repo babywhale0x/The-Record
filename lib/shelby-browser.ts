@@ -61,13 +61,14 @@ export async function uploadFileFromBrowser(
   onProgress?.({ stage: 'registering', message: 'Registering on Aptos…' })
   const expirationMicros = (Date.now() + 30 * 24 * 60 * 60 * 1000) * 1000
 
-  const payload = ShelbyBlobClient.createRegisterBlobPayload({
+  const payload = (ShelbyBlobClient as any).createRegisterBlobPayload({
     account: aptosAccountAddress,
     blobName: file.name,
     blobMerkleRoot: commitments.blob_merkle_root,
     numChunksets: expectedTotalChunksets(commitments.raw_data_size),
     expirationMicros,
     blobSize: commitments.raw_data_size,
+    encoding: 0, // default RS encoding
   })
 
   const submitted = await signAndSubmitTransaction({ data: payload })
