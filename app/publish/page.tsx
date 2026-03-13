@@ -1,14 +1,18 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useWallet } from '@aptos-labs/wallet-adapter-react'
 import { CONTENT_TYPE_LIST } from '@/lib/content-types'
 import styles from './publish.module.css'
 
 type Step = 1 | 2 | 3
 type Status = 'idle' | 'submitting' | 'success'
+type WalletStatus = 'checking' | 'approved' | 'pending' | 'none'
 
 export default function PublishPage() {
-  const { account } = useWallet()
+  const { account, connected } = useWallet()
+  const router = useRouter()
+  const [walletStatus, setWalletStatus] = useState<WalletStatus>('checking')
   const [step, setStep] = useState<Step>(1)
   const [status, setStatus] = useState<Status>('idle')
   const [form, setForm] = useState({
@@ -17,6 +21,27 @@ export default function PublishPage() {
     sampleUrl1: '', sampleUrl2: '', bio: '',
     contentPlan: '', walletReady: '',
   })
+
+  const address = account?.address?.toString()
+
+  // Check wallet status on connect
+  useEffect(() => {
+    if (!connected || !address) {
+      setWalletStatus('none')
+      return
+    }
+    setWalletStatus('checking')
+    fetch(`/api/publisher/status?address=${address}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status === 'approved') {
+          router.replace('/dashboard')
+        } else {
+          setWalletStatus(data.status)
+        }
+      })
+      .catch(() => setWalletStatus('none'))
+  }, [connected, address])
 
   const up = (field: string, val: string) => setForm((p) => ({ ...p, [field]: val }))
   const toggleType = (id: string) =>
@@ -33,7 +58,7 @@ export default function PublishPage() {
       const res = await fetch('/api/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, aptosAddress: account?.address?.toString() || '' }),
+        body: JSON.stringify({ ...form, aptosAddress: address || '' }),
       })
       if (!res.ok) {
         const { error } = await res.json().catch(() => ({ error: 'Submission failed' }))
@@ -42,18 +67,59 @@ export default function PublishPage() {
         return
       }
       setStatus('success')
+      setWalletStatus('pending')
     } catch {
       alert('Network error. Please check your connection and try again.')
       setStatus('idle')
     }
   }
 
+  // ── Checking status ──
+  if (walletStatus === 'checking') {
+    return (
+      <main className={styles.page}>
+        <header className={styles.topBar}><h1 className={styles.title}>Publish</h1></header>
+        <div className={styles.success}>
+          <p style={{ color: 'var(--text-muted)' }}>Checking wallet status…</p>
+        </div>
+      </main>
+    )
+  }
+
+  // ── Pending application ──
+  if (walletStatus === 'pending') {
+    return (
+      <main className={styles.page}>
+        <header className={styles.topBar}><h1 className={styles.title}>Publish</h1></header>
+        <div className={styles.success}>
+          <div className={styles.successIcon}>⏳</div>
+          <h2 className={styles.successHeading}>Application under review.</h2>
+          <p className={styles.successBody}>
+            Your application for <strong>{address?.slice(0, 10)}…{address?.slice(-6)}</strong> is pending approval.
+            We review every application personally — you'll hear from us within 5–7 days.
+          </p>
+          <div className={styles.successSteps}>
+            {[
+              ['01', 'We review your work samples and background'],
+              ['02', 'We may reach out with a brief follow-up'],
+              ['03', 'On approval, you get instant access to your publisher dashboard'],
+            ].map(([n, t]) => (
+              <div key={n} className={styles.successStep}>
+                <span className={styles.successNum}>{n}</span>
+                <span>{t}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  // ── Application success ──
   if (status === 'success') {
     return (
       <main className={styles.page}>
-        <header className={styles.topBar}>
-          <h1 className={styles.title}>Publish</h1>
-        </header>
+        <header className={styles.topBar}><h1 className={styles.title}>Publish</h1></header>
         <div className={styles.success}>
           <div className={styles.successIcon}>📬</div>
           <h2 className={styles.successHeading}>Application received.</h2>
@@ -77,6 +143,24 @@ export default function PublishPage() {
     )
   }
 
+  // ── No wallet / not connected ──
+  if (!connected || !address) {
+    return (
+      <main className={styles.page}>
+        <header className={styles.topBar}><h1 className={styles.title}>Publish</h1></header>
+        <div className={styles.success}>
+          <div className={styles.successIcon}>🔐</div>
+          <h2 className={styles.successHeading}>Connect your wallet to apply.</h2>
+          <p className={styles.successBody}>
+            You need a connected Aptos wallet to apply as a publisher on The Record.
+            Connect your wallet using the button in the top right, then return here.
+          </p>
+        </div>
+      </main>
+    )
+  }
+
+  // ── Application form (status === 'none') ──
   return (
     <main className={styles.page}>
       <header className={styles.topBar}>
@@ -95,7 +179,6 @@ export default function PublishPage() {
           <div className={styles.stepContent}>
             <h2 className={styles.stepTitle}>Who are you?</h2>
             <p className={styles.stepSub}>Tell us about yourself. Everything is kept confidential until you're approved.</p>
-
             <div className={styles.fields}>
               <Field label="Display name or pen name" required>
                 <input className={styles.input} placeholder="e.g. ZachOnChain" value={form.name} onChange={(e) => up('name', e.target.value)} />
@@ -112,13 +195,9 @@ export default function PublishPage() {
               <Field label="What best describes you?" required>
                 <div className={styles.radioGroup}>
                   {[
-                    'On-chain investigator',
-                    'Investigative journalist',
-                    'Researcher / scientist',
-                    'Legal archivist / lawyer',
-                    'Financial analyst',
-                    'Whistleblower / source',
-                    'Other',
+                    'On-chain investigator', 'Investigative journalist',
+                    'Researcher / scientist', 'Legal archivist / lawyer',
+                    'Financial analyst', 'Whistleblower / source', 'Other',
                   ].map((opt) => (
                     <label key={opt} className={`${styles.radioCard} ${form.creatorType === opt ? styles.radioCardActive : ''}`}>
                       <input type="radio" name="creatorType" checked={form.creatorType === opt} onChange={() => up('creatorType', opt)} />
@@ -141,8 +220,7 @@ export default function PublishPage() {
                 <div className={styles.typeGrid}>
                   {CONTENT_TYPE_LIST.map((ct) => (
                     <button
-                      key={ct.id}
-                      type="button"
+                      key={ct.id} type="button"
                       className={`${styles.typeToggle} ${form.contentTypes.includes(ct.id) ? styles.typeToggleActive : ''}`}
                       style={form.contentTypes.includes(ct.id) ? { borderColor: ct.border, background: ct.bg, color: ct.color } : {}}
                       onClick={() => toggleType(ct.id)}
@@ -172,7 +250,7 @@ export default function PublishPage() {
             <p className={styles.stepSub}>What will you publish, and how do you want to get paid?</p>
             <div className={styles.fields}>
               <Field label="What will you publish?" required hint="Describe your first records or ongoing work. 2–4 sentences.">
-                <textarea className={styles.textarea} rows={4} placeholder="I plan to publish a series tracing fund flows from the 2024 bridge exploits attributed to state-sponsored actors..." value={form.contentPlan} onChange={(e) => up('contentPlan', e.target.value)} />
+                <textarea className={styles.textarea} rows={4} placeholder="I plan to publish a series tracing fund flows from the 2024 bridge exploits..." value={form.contentPlan} onChange={(e) => up('contentPlan', e.target.value)} />
               </Field>
               <Field label="Do you have a crypto wallet?" required hint="You'll need one to receive payments. We can help.">
                 <div className={styles.radioGroup}>
