@@ -178,7 +178,7 @@ async function uploadToShelby(
     const uploadRes = await fetch(uploadUrl, {
       method: 'PUT',
       headers,
-      body: data,
+      body: Buffer.from(data),
     })
 
     if (!uploadRes.ok && uploadRes.status !== 204) {

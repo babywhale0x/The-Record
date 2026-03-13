@@ -2,11 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Include wasm binaries needed by @shelby-protocol/sdk
-  outputFileTracingIncludes: {
-    '**': ['./node_modules/@shelby-protocol/clay-codes/dist/*.wasm'],
-  },
-
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.b-cdn.net' },
