@@ -16,7 +16,8 @@
     "@shelby-protocol/sdk": "latest",
     "@aptos-labs/ts-sdk": "^5",
     "@aptos-labs/wallet-adapter-react": "^4",
-    "@supabase/supabase-js": "^2"
+    "@supabase/supabase-js": "^2",
+    "@shelby-protocol/clay-codes": "latest"
   },
   "devDependencies": {
     "@types/node": "^20",
