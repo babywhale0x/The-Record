@@ -114,7 +114,7 @@ export function shelbyConfigFromEnv(): ShelbyConfig {
   }
 }
 
-// ─── Core upload using direct HTTP (bypasses SDK clay.wasm dependency) ────────
+// ─── Core upload via Shelby SDK ───────────────────────────────────────────────
 
 async function uploadToShelby(
   blobName: string,
@@ -125,77 +125,41 @@ async function uploadToShelby(
   onProgress?.('preparing')
 
   try {
-    const { Account, Ed25519PrivateKey, Aptos, AptosConfig, Network } = await import('@aptos-labs/ts-sdk')
+    const { ShelbyNodeClient } = await import('@shelby-protocol/sdk/node')
+    const { Account, Ed25519PrivateKey, Network } = await import('@aptos-labs/ts-sdk')
 
-    const aptosNodeUrl = 'https://api.testnet.aptoslabs.com/v1'
-    const shelbyRpcUrl = 'https://api.testnet.shelby.xyz/shelby'
-
-    // Build account from private key
     const privateKey = new Ed25519PrivateKey(config.privateKey)
     const account = Account.fromPrivateKey({ privateKey })
 
-    // Step 1: Register blob on Aptos via Shelby smart contract
+    const shelbyClient = new ShelbyNodeClient({
+      network: Network.TESTNET,
+      ...(config.apiKey ? { apiKey: config.apiKey } : {}),
+      indexer: { endpoint: 'https://api.testnet.aptoslabs.com/nocode/v1/public/cmforrguw0042s601fn71f9l2/v1/graphql' },
+    } as any)
+
     onProgress?.('uploading', 0)
 
-    const aptosClient = new Aptos(new AptosConfig({
-      network: Network.TESTNET,
-      ...(config.apiKey ? { clientConfig: { API_KEY: config.apiKey } } : {}),
-    }))
-
-    // Build register transaction
-    const expirationMicros = expiryMicros()
-    const contentHash = sha256Hex(data)
-
-    // Submit registration transaction to Shelby smart contract
-    const transaction = await aptosClient.transaction.build.simple({
-      sender: account.accountAddress,
-      data: {
-        function: `0xc63d6a5efb0080a6029403131715bd4971e1149f7cc099aac69bb0069b3ddbf5::blob_store::register_blob`,
-        functionArguments: [
-          blobName,
-          Array.from(data).length,
-          expirationMicros,
-        ],
-      },
-    })
-
-    const submitted = await aptosClient.signAndSubmitTransaction({
+    const result = await (shelbyClient as any).upload({
+      account,
       signer: account,
-      transaction,
+      blobData: Buffer.from(data),
+      blobName,
+      expirationMicros: expiryMicros(),
     })
-
-    await aptosClient.waitForTransaction({ transactionHash: submitted.hash })
-
-    // Step 2: Upload blob data directly to Shelby RPC via HTTP PUT
-    onProgress?.('uploading', 50)
-
-    const uploadUrl = `${shelbyRpcUrl}/v1/blobs/${config.accountAddress}/${encodeURIComponent(blobName)}`
-    const headers: Record<string, string> = {
-      'Content-Length': data.byteLength.toString(),
-    }
-    if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`
-
-    const uploadRes = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers,
-      body: Buffer.from(data),
-    })
-
-    if (!uploadRes.ok && uploadRes.status !== 204) {
-      throw new ShelbyError(`RPC upload failed: ${uploadRes.status} ${uploadRes.statusText}`)
-    }
 
     onProgress?.('done', 100)
 
+    const txHash = (result as any)?.txHash || (result as any)?.aptosTxHash || ''
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString()
+    const contentHash = sha256Hex(data)
 
     return {
       blobName,
-      aptosTxHash: submitted.hash,
+      aptosTxHash: txHash,
       contentHash,
       committedAt: Date.now(),
       explorerUrl: blobExplorerUrl(config.network, config.accountAddress),
-      aptosExplorerUrl: aptosExplorerUrl(config.network, submitted.hash),
+      aptosExplorerUrl: aptosExplorerUrl(config.network, txHash),
       expiresAt,
       sizeBytes: data.byteLength,
     }
@@ -247,22 +211,29 @@ export async function getBlob(
   range?: { start: number; end: number }
 ): Promise<BlobContent> {
   try {
-    const shelbyRpcUrl = 'https://api.testnet.shelby.xyz/shelby'
-    const url = `${shelbyRpcUrl}/v1/blobs/${config.accountAddress}/${encodeURIComponent(blobName)}`
+    const { ShelbyNodeClient } = await import('@shelby-protocol/sdk/node')
+    const { Network } = await import('@aptos-labs/ts-sdk')
 
-    const headers: Record<string, string> = {}
-    if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`
-    if (range) headers['Range'] = `bytes=${range.start}-${range.end}`
+    const shelbyClient = new ShelbyNodeClient({
+      network: Network.TESTNET,
+      ...(config.apiKey ? { apiKey: config.apiKey } : {}),
+      indexer: { endpoint: 'https://api.testnet.aptoslabs.com/nocode/v1/public/cmforrguw0042s601fn71f9l2/v1/graphql' },
+    } as any)
 
-    const res = await fetch(url, { headers })
-    if (!res.ok) throw new ShelbyError(`Get blob failed: ${res.status}`)
+    const blob = await shelbyClient.download({
+      account: config.accountAddress,
+      blobName,
+    }) as any
 
-    const arrayBuf = await res.arrayBuffer()
-    const data = new Uint8Array(arrayBuf)
+    const chunks: Buffer[] = []
+    for await (const chunk of blob.stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as any))
+    }
+    const data = new Uint8Array(Buffer.concat(chunks))
 
     return {
       data,
-      contentType: res.headers.get('content-type') || 'application/octet-stream',
+      contentType: 'application/octet-stream',
       blobName,
       retrievedAt: Date.now(),
       totalBytes: data.byteLength,

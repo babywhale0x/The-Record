@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "renew": "curl -X POST http://localhost:3000/api/renew -H 'Authorization: Bearer dev'"
+    "renew": "curl -X POST http://localhost:3000/api/renew -H 'Authorization: Bearer dev'",
+    "postinstall": "node scripts/copy-wasm.js || true"
   },
   "dependencies": {
     "next": "14.2.5",

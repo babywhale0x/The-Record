@@ -2,6 +2,13 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  // Tell Vercel file tracer to bundle wasm files needed by @shelby-protocol/clay-codes
+  outputFileTracingIncludes: {
+    '/api/**': [
+      './node_modules/@shelby-protocol/clay-codes/dist/**',
+    ],
+  },
+
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.b-cdn.net' },
@@ -24,11 +31,10 @@ const nextConfig = {
   },
 
   webpack: (config, { isServer }) => {
-    // Handle .wasm files
+    // Required for clay.wasm
     config.experiments = { ...config.experiments, asyncWebAssembly: true }
 
     if (!isServer) {
-      // These Node.js-only packages must never be bundled for the browser
       config.resolve.fallback = {
         ...config.resolve.fallback,
         got: false,
