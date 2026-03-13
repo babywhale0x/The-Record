@@ -92,7 +92,7 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
       </div>
 
       <div className={styles.header}>
-        <ContentTypeBadge type={record.content_type} size="md" />
+        <ContentTypeBadge type={record.content_type as any} size="md" />
         <h1 className={styles.title}>{record.title}</h1>
         <p className={styles.excerpt}>{record.excerpt}</p>
 
