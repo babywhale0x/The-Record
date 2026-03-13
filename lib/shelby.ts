@@ -131,6 +131,27 @@ async function uploadToShelby(
     const privateKey = new Ed25519PrivateKey(config.privateKey)
     const account = Account.fromPrivateKey({ privateKey })
 
+    // Set wasm path env var so clay-codes can find it in Vercel serverless
+    // The wasm is copied to /public/clay.wasm at build time via vercel.json buildCommand
+    // clay-codes also checks CLAY_WASM_PATH env var
+    if (!process.env.CLAY_WASM_PATH) {
+      const path = await import('path')
+      const wasmCandidates = [
+        path.join(process.cwd(), 'public', 'clay.wasm'),
+        path.join(process.cwd(), 'node_modules', '@shelby-protocol', 'clay-codes', 'dist', 'clay.wasm'),
+        '/var/task/public/clay.wasm',
+        '/var/task/node_modules/@shelby-protocol/clay-codes/dist/clay.wasm',
+      ]
+      const fs = await import('fs')
+      for (const p of wasmCandidates) {
+        if (fs.existsSync(p)) {
+          process.env.CLAY_WASM_PATH = p
+          console.log('[shelby] Found clay.wasm at:', p)
+          break
+        }
+      }
+    }
+
     const shelbyClient = new ShelbyNodeClient({
       network: Network.TESTNET,
       ...(config.apiKey ? { apiKey: config.apiKey } : {}),

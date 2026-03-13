@@ -1,4 +1,5 @@
 {
+  "buildCommand": "cp node_modules/@shelby-protocol/clay-codes/dist/clay.wasm public/clay.wasm 2>/dev/null; npm run build",
   "crons": [
     {
       "path": "/api/renew",
