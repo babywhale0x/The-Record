@@ -2,16 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Copy .wasm files from node_modules to the build output
+  // Include wasm binaries needed by @shelby-protocol/sdk
   outputFileTracingIncludes: {
-    '/api/publish': [
-      './node_modules/@shelby-protocol/clay-codes/dist/**/*.wasm',
-      './node_modules/@shelby-protocol/**/*.wasm',
-    ],
-    '/api/stream': [
-      './node_modules/@shelby-protocol/clay-codes/dist/**/*.wasm',
-      './node_modules/@shelby-protocol/**/*.wasm',
-    ],
+    '**': ['./node_modules/@shelby-protocol/clay-codes/dist/*.wasm'],
   },
 
   images: {
