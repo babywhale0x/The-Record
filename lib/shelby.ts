@@ -114,7 +114,7 @@ export function shelbyConfigFromEnv(): ShelbyConfig {
   }
 }
 
-// ─── Core upload using real SDK ───────────────────────────────────────────────
+// ─── Core upload using direct HTTP (bypasses SDK clay.wasm dependency) ────────
 
 async function uploadToShelby(
   blobName: string,
@@ -125,55 +125,77 @@ async function uploadToShelby(
   onProgress?.('preparing')
 
   try {
-    const { ShelbyNodeClient } = await import('@shelby-protocol/sdk/node')
-    const { Account, Ed25519PrivateKey, Network } = await import('@aptos-labs/ts-sdk')
+    const { Account, Ed25519PrivateKey, Aptos, AptosConfig, Network } = await import('@aptos-labs/ts-sdk')
 
-    // Map our network string to SDK Network enum
-    // shelbynet is Shelby's own chain - use custom URLs, not Aptos Network enum
-    const sdkNetwork = Network.TESTNET
-    const shelbyRpcUrl = config.network === 'shelbynet'
-      ? 'https://api.testnet.shelby.xyz/shelby'
-      : 'https://api.testnet.shelby.xyz/shelby'
-    const aptosNodeUrl = config.network === 'shelbynet'
-      ? 'https://api.testnet.aptoslabs.com/v1'
-      : 'https://api.testnet.aptoslabs.com/v1'
-    // Correct pattern per ts-sdk-account skill: Account.fromPrivateKey({ privateKey })
+    const aptosNodeUrl = 'https://api.testnet.aptoslabs.com/v1'
+    const shelbyRpcUrl = 'https://api.testnet.shelby.xyz/shelby'
+
+    // Build account from private key
     const privateKey = new Ed25519PrivateKey(config.privateKey)
     const account = Account.fromPrivateKey({ privateKey })
 
-    // Pass explicit RPC URL for shelbynet (custom network)
-    const shelbyClient = new ShelbyNodeClient({
-      network: sdkNetwork,
-      ...(config.apiKey ? { apiKey: config.apiKey } : {}),
-      nodeUrl: aptosNodeUrl,
-      shelbyRpcUrl,
-      indexer: { endpoint: 'https://api.testnet.aptoslabs.com/v1/graphql' },
-    } as any)
-
+    // Step 1: Register blob on Aptos via Shelby smart contract
     onProgress?.('uploading', 0)
 
-    // Upload — cast to any to bypass SDK type version mismatch
-    const result = await (shelbyClient as any).upload({
-      account,
-      signer: account,
-      blobData: Buffer.from(data),
-      blobName,
-      expirationMicros: expiryMicros(),
+    const aptosClient = new Aptos(new AptosConfig({
+      network: Network.TESTNET,
+      ...(config.apiKey ? { clientConfig: { API_KEY: config.apiKey } } : {}),
+    }))
+
+    // Build register transaction
+    const expirationMicros = expiryMicros()
+    const contentHash = sha256Hex(data)
+
+    // Submit registration transaction to Shelby smart contract
+    const transaction = await aptosClient.transaction.build.simple({
+      sender: account.accountAddress,
+      data: {
+        function: `0xc63d6a5efb0080a6029403131715bd4971e1149f7cc099aac69bb0069b3ddbf5::blob_store::register_blob`,
+        functionArguments: [
+          blobName,
+          Array.from(data).length,
+          expirationMicros,
+        ],
+      },
     })
+
+    const submitted = await aptosClient.signAndSubmitTransaction({
+      signer: account,
+      transaction,
+    })
+
+    await aptosClient.waitForTransaction({ transactionHash: submitted.hash })
+
+    // Step 2: Upload blob data directly to Shelby RPC via HTTP PUT
+    onProgress?.('uploading', 50)
+
+    const uploadUrl = `${shelbyRpcUrl}/v1/blobs/${config.accountAddress}/${encodeURIComponent(blobName)}`
+    const headers: Record<string, string> = {
+      'Content-Length': data.byteLength.toString(),
+    }
+    if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers,
+      body: data,
+    })
+
+    if (!uploadRes.ok && uploadRes.status !== 204) {
+      throw new ShelbyError(`RPC upload failed: ${uploadRes.status} ${uploadRes.statusText}`)
+    }
 
     onProgress?.('done', 100)
 
-    const txHash = (result as any)?.txHash || (result as any)?.aptosTxHash || ''
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString()
-    const contentHash = sha256Hex(data)
 
     return {
       blobName,
-      aptosTxHash: txHash,
+      aptosTxHash: submitted.hash,
       contentHash,
       committedAt: Date.now(),
       explorerUrl: blobExplorerUrl(config.network, config.accountAddress),
-      aptosExplorerUrl: aptosExplorerUrl(config.network, txHash),
+      aptosExplorerUrl: aptosExplorerUrl(config.network, submitted.hash),
       expiresAt,
       sizeBytes: data.byteLength,
     }
@@ -225,40 +247,22 @@ export async function getBlob(
   range?: { start: number; end: number }
 ): Promise<BlobContent> {
   try {
-    const { ShelbyNodeClient } = await import('@shelby-protocol/sdk/node')
-    const { Network } = await import('@aptos-labs/ts-sdk')
+    const shelbyRpcUrl = 'https://api.testnet.shelby.xyz/shelby'
+    const url = `${shelbyRpcUrl}/v1/blobs/${config.accountAddress}/${encodeURIComponent(blobName)}`
 
-    // shelbynet is Shelby's own chain - use custom URLs, not Aptos Network enum
-    const sdkNetwork = Network.TESTNET
-    const shelbyRpcUrl = config.network === 'shelbynet'
-      ? 'https://api.testnet.shelby.xyz/shelby'
-      : 'https://api.testnet.shelby.xyz/shelby'
-    const aptosNodeUrl = config.network === 'shelbynet'
-      ? 'https://api.testnet.aptoslabs.com/v1'
-      : 'https://api.testnet.aptoslabs.com/v1'
-    const shelbyClient = new ShelbyNodeClient({
-      network: sdkNetwork,
-      ...(config.apiKey ? { apiKey: config.apiKey } : {}),
-      nodeUrl: aptosNodeUrl,
-      shelbyRpcUrl,
-      indexer: { endpoint: 'https://api.testnet.aptoslabs.com/v1/graphql' },
-    } as any)
+    const headers: Record<string, string> = {}
+    if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`
+    if (range) headers['Range'] = `bytes=${range.start}-${range.end}`
 
-    const blob = await shelbyClient.download({
-      account: config.accountAddress,
-      blobName,
-    }) as any
+    const res = await fetch(url, { headers })
+    if (!res.ok) throw new ShelbyError(`Get blob failed: ${res.status}`)
 
-    // Collect stream
-    const chunks: Buffer[] = []
-    for await (const chunk of blob.stream) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as any))
-    }
-    const data = new Uint8Array(Buffer.concat(chunks))
+    const arrayBuf = await res.arrayBuffer()
+    const data = new Uint8Array(arrayBuf)
 
     return {
       data,
-      contentType: 'application/octet-stream',
+      contentType: res.headers.get('content-type') || 'application/octet-stream',
       blobName,
       retrievedAt: Date.now(),
       totalBytes: data.byteLength,
