@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useWallet } from '@aptos-labs/wallet-adapter-react'
 import { useWalletModal } from '@/components/wallet/WalletModal'
 import { CONTENT_TYPE_LIST } from '@/lib/content-types'
-import { uploadFileFromBrowser, type BrowserUploadProgress } from '@/lib/shelby-browser'
+import { uploadFileFromBrowser, type BrowserUploadProgress, type BrowserUploadResult } from '@/lib/shelby-browser'
 import styles from './dashboard.module.css'
 
 type View = 'overview' | 'new-record' | 'my-records'
@@ -43,12 +43,8 @@ export default function DashboardPage() {
   const address = account?.address?.toString()
   const shortAddr = address ? `${address.slice(0, 8)}...${address.slice(-6)}` : ''
 
-  // Check publisher approval status when wallet connects
   useEffect(() => {
-    if (!connected || !address) {
-      setPublisherStatus('none')
-      return
-    }
+    if (!connected || !address) { setPublisherStatus('none'); return }
     setPublisherStatus('loading')
     fetch(`/api/publisher/status?address=${encodeURIComponent(address)}`)
       .then(r => r.json())
@@ -57,12 +53,10 @@ export default function DashboardPage() {
   }, [connected, address])
 
   const up = (field: keyof RecordForm, val: string) => setForm(p => ({ ...p, [field]: val }))
-
   const addDocs = (files: FileList | null) => {
     if (!files) return
     setDocs(p => [...p, ...Array.from(files).map(file => ({ file, id: Math.random().toString(36).slice(2) }))])
   }
-
   const removeDoc = (id: string) => setDocs(p => p.filter(d => d.id !== id))
 
   const loadMyRecords = async () => {
@@ -75,12 +69,52 @@ export default function DashboardPage() {
   }
 
   const handlePublish = async () => {
+    if (!address || !signAndSubmitTransaction) return
     setStatus('uploading'); setErrorMsg(''); setUploadProgress('')
+
     try {
       const slug = form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80)
+      const apiKey = process.env.NEXT_PUBLIC_APTOS_API_KEY || ''
 
-      // Send article JSON to /api/publish (documents skipped for now - shelbynet CORS blocks browser direct upload)
+      // ── Step 1: Upload documents from browser using publisher's wallet ──────
+      const documentReceipts: (BrowserUploadResult & { originalName: string })[] = []
+      for (const doc of docs) {
+        setUploadProgress(`Uploading ${doc.file.name} to Shelby… (${docs.indexOf(doc) + 1}/${docs.length})`)
+        const onProgress = (p: BrowserUploadProgress) => setUploadProgress(p.message)
+        const receipt = await uploadFileFromBrowser(
+          doc.file,
+          address,
+          signAndSubmitTransaction,
+          apiKey,
+          onProgress
+        )
+        documentReceipts.push({ ...receipt, originalName: doc.file.name })
+      }
+
+      // ── Step 2: Upload article JSON from browser using publisher's wallet ───
       setUploadProgress('Archiving article to Shelby…')
+      const articleContent = JSON.stringify({
+        slug, title: form.title, excerpt: form.excerpt, body: form.body,
+        contentType: form.contentType,
+        tags: form.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
+        priceView: parseFloat(form.priceView),
+        priceCite: parseFloat(form.priceCite),
+        priceLicense: parseFloat(form.priceLicense),
+        publisherAddress: address,
+        publishedAt: Date.now(),
+      })
+      const articleFile = new File([articleContent], `${slug}.json`, { type: 'application/json' })
+      const onArticleProgress = (p: BrowserUploadProgress) => setUploadProgress(p.message)
+      const articleReceipt = await uploadFileFromBrowser(
+        articleFile,
+        address,
+        signAndSubmitTransaction,
+        apiKey,
+        onArticleProgress
+      )
+
+      // ── Step 3: Save receipt to our backend (no Shelby calls server-side) ───
+      setUploadProgress('Saving to The Record database…')
       const res = await fetch('/api/publish', {
         method: 'POST',
         headers: {
@@ -95,16 +129,20 @@ export default function DashboardPage() {
             priceView: parseFloat(form.priceView),
             priceCite: parseFloat(form.priceCite),
             priceLicense: parseFloat(form.priceLicense),
-            publisherAddress: address || '',
+            publisherAddress: address,
           },
-          documentReceipts: [], // documents uploaded separately via server proxy
+          articleReceipt,
+          documentReceipts,
         }),
       })
+
       if (!res.ok) {
-        const { error } = await res.json().catch(() => ({ error: 'Publish failed' }))
+        const { error } = await res.json().catch(() => ({ error: 'Save failed' }))
         throw new Error(error)
       }
-      setPublishedSlug(slug); setStatus('success')
+
+      setPublishedSlug(slug)
+      setStatus('success')
       setForm(EMPTY_FORM); setDocs([]); setPublishStep('write'); setUploadProgress('')
     } catch (err: any) {
       setErrorMsg(err?.message || 'Something went wrong')
@@ -128,7 +166,6 @@ export default function DashboardPage() {
     )
   }
 
-  // ── Checking status ────────────────────────────────────────────────────────
   if (publisherStatus === 'loading') {
     return (
       <main className={styles.page}>
@@ -141,7 +178,6 @@ export default function DashboardPage() {
     )
   }
 
-  // ── Not a publisher yet ────────────────────────────────────────────────────
   if (publisherStatus === 'none') {
     return (
       <main className={styles.page}>
@@ -152,16 +188,13 @@ export default function DashboardPage() {
         <div className={styles.gateState}>
           <div className={styles.gateIcon}>◈</div>
           <h2 className={styles.gateHeading}>You're not a publisher yet</h2>
-          <p className={styles.gateBody}>
-            Publishing on The Record is by application. Submit your work samples and we'll review your application.
-          </p>
+          <p className={styles.gateBody}>Publishing on The Record is by application. Submit your work samples and we'll review your application.</p>
           <a href="/publish" className={styles.connectBtn}>Apply to Publish →</a>
         </div>
       </main>
     )
   }
 
-  // ── Application pending ────────────────────────────────────────────────────
   if (publisherStatus === 'pending') {
     return (
       <main className={styles.page}>
@@ -172,9 +205,7 @@ export default function DashboardPage() {
         <div className={styles.gateState}>
           <div className={styles.pendingIcon}>⏳</div>
           <h2 className={styles.gateHeading}>Application under review</h2>
-          <p className={styles.gateBody}>
-            Your application has been received. We review every submission personally and will reach out within 5–7 days.
-          </p>
+          <p className={styles.gateBody}>Your application has been received. We review every submission personally and will reach out within 5–7 days.</p>
           <div className={styles.pendingAddr}>
             <span className={styles.pendingAddrLabel}>Your wallet</span>
             <span className={styles.pendingAddrValue}>{address}</span>
@@ -185,7 +216,6 @@ export default function DashboardPage() {
     )
   }
 
-  // ── Success after publish ──────────────────────────────────────────────────
   if (status === 'success') {
     return (
       <main className={styles.page}>
@@ -222,7 +252,6 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* ── OVERVIEW ── */}
       {view === 'overview' && (
         <div className={styles.content}>
           <div className={styles.statsGrid}>
@@ -251,7 +280,12 @@ export default function DashboardPage() {
           <div className={styles.infoBox}>
             <h3 className={styles.infoTitle}>How publishing works</h3>
             <div className={styles.infoSteps}>
-              {[['01','Write your record','Add a title, body, and excerpt.'],['02','Attach source documents','Upload PDFs, spreadsheets, images.'],['03','Set your prices','Choose prices for View, Cite, and License tiers.'],['04','Publish to chain','Uploaded to Shelby and committed to Aptos. Permanent.']].map(([n,t,d]) => (
+              {[
+                ['01','Write your record','Add a title, body, and excerpt.'],
+                ['02','Attach source documents','Upload PDFs, spreadsheets, images.'],
+                ['03','Set your prices','Choose prices for View, Cite, and License tiers.'],
+                ['04','Sign & publish','Your wallet signs the upload. Permanently archived on Aptos.'],
+              ].map(([n,t,d]) => (
                 <div key={n} className={styles.infoStep}>
                   <span className={styles.infoNum}>{n}</span>
                   <div><strong>{t}</strong><p>{d}</p></div>
@@ -262,7 +296,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── NEW RECORD ── */}
       {view === 'new-record' && (
         <div className={styles.content}>
           <div className={styles.steps}>
@@ -351,7 +384,11 @@ export default function DashboardPage() {
               <h2 className={styles.formTitle}>Set your prices</h2>
               <p className={styles.formSub}>Readers pay in APT. Prices shown in USD equivalent.</p>
               <div className={styles.pricingGrid}>
-                {[{tier:'View',key:'priceView' as const,desc:'48h read-only access, watermarked',suggested:'$5'},{tier:'Cite',key:'priceCite' as const,desc:'Permanent citation rights + signed PDF',suggested:'$19'},{tier:'License',key:'priceLicense' as const,desc:'Full download + Certificate of Authenticity',suggested:'$99'}].map(({tier,key,desc,suggested})=>(
+                {[
+                  {tier:'View',key:'priceView' as const,desc:'48h read-only access, watermarked',suggested:'$5'},
+                  {tier:'Cite',key:'priceCite' as const,desc:'Permanent citation rights + signed PDF',suggested:'$19'},
+                  {tier:'License',key:'priceLicense' as const,desc:'Full download + Certificate of Authenticity',suggested:'$99'},
+                ].map(({tier,key,desc,suggested})=>(
                   <div key={tier} className={styles.priceCard}>
                     <div className={styles.priceCardTop}><span className={styles.priceTier}>{tier}</span><span className={styles.priceSuggested}>Suggested: {suggested}</span></div>
                     <p className={styles.priceDesc}>{desc}</p>
@@ -375,7 +412,13 @@ export default function DashboardPage() {
               <h2 className={styles.formTitle}>Review & publish</h2>
               <p className={styles.formSub}>Once published, this record is permanently archived on-chain and cannot be deleted.</p>
               <div className={styles.reviewCard}>
-                {[['Title',form.title],['Type',form.contentType],['Documents',`${docs.length} file${docs.length!==1?'s':''}`],['Pricing',`View $${form.priceView} · Cite $${form.priceCite} · License $${form.priceLicense}`],['Publisher',shortAddr]].map(([l,v])=>(
+                {[
+                  ['Title',form.title],
+                  ['Type',form.contentType],
+                  ['Documents',`${docs.length} file${docs.length!==1?'s':''}`],
+                  ['Pricing',`View $${form.priceView} · Cite $${form.priceCite} · License $${form.priceLicense}`],
+                  ['Publisher',shortAddr],
+                ].map(([l,v])=>(
                   <div key={l} className={styles.reviewRow}><span className={styles.reviewLabel}>{l}</span><span className={styles.reviewValue} style={l==='Publisher'?{fontFamily:'var(--font-mono)',fontSize:'11px'}:{}}>{v}</span></div>
                 ))}
               </div>
@@ -384,10 +427,10 @@ export default function DashboardPage() {
                 <div>
                   <strong>What happens when you publish:</strong>
                   <ol className={styles.chainSteps}>
-                    <li>Record uploaded to Shelby Protocol (decentralised storage)</li>
+                    <li>Your wallet signs the upload directly — you own this record</li>
+                    <li>Files uploaded to Shelby Protocol (decentralised storage)</li>
                     <li>Content hash committed to Aptos blockchain</li>
-                    <li>Record saved to The Record database</li>
-                    <li>Live on your profile and the feed immediately</li>
+                    <li>Record saved to The Record database and live immediately</li>
                   </ol>
                 </div>
               </div>
@@ -406,7 +449,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── MY RECORDS ── */}
       {view === 'my-records' && (
         <div className={styles.content}>
           <h2 className={styles.sectionTitle}>My Records</h2>
