@@ -33,8 +33,8 @@ export default function WalletPage() {
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const address = account?.address?.toString()
-  const shortAddress = address ? `${address.slice(0, 10)}…${address.slice(-6)}` : null
+  const address = account?.address ? String(account.address) : undefined
+  const shortAddress = address ? `${String(address).slice(0, 10)}…${String(address).slice(-6)}` : null
 
   const fetchBalance = useCallback(async () => {
     if (!address) return
@@ -118,7 +118,7 @@ export default function WalletPage() {
   const formatDate = (ts: number) => new Date(ts).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
   })
-  const shortAddr = (a: string) => a ? `${a.slice(0, 8)}…${a.slice(-4)}` : '—'
+  const shortAddr = (a: any) => { const s = String(a || ''); return s.length > 12 ? `${s.slice(0, 8)}…${s.slice(-4)}` : s || '—' }
 
   if (!connected) {
     return (
