@@ -48,7 +48,9 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
         cite: record.price_cite,
         license: record.price_license,
       }
-      const priceOctas = priceMap[tier] || record.price_view // stored as octas (1e8 = 1 APT)
+      // Prices stored as integer octas (1 APT = 100_000_000 octas)
+      // e.g. price_view: 10000 = 0.0001 APT
+      const priceOctas = Math.round(priceMap[tier] || record.price_view)
 
       if (priceOctas > 0 && connected && signAndSubmitTransaction && record.publisher_address) {
         const platformOctas = Math.round(priceOctas * PLATFORM_FEE_PCT)
@@ -198,7 +200,7 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
                     >
                       <div className={styles.tierTop}>
                         <span className={styles.tierLabel} style={{ color: tier.color }}>{tier.label}</span>
-                        <span className={styles.tierPrice}>{price != null ? `$${price}` : 'Custom'}</span>
+                        <span className={styles.tierPrice}>{price != null ? `${price} APT` : 'Custom'}</span>
                       </div>
                       <p className={styles.tierDesc}>{tier.description}</p>
                       <ul className={styles.tierFeatures}>
@@ -219,7 +221,7 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
                           ? 'Unlocking…'
                           : tier.id === 'institutional'
                           ? 'Contact us →'
-                          : `Unlock for $${price} →`}
+                          : `Unlock for ${price} APT →`}
                       </button>
                     </div>
                   )
