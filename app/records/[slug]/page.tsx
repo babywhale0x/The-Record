@@ -42,21 +42,28 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
     setUnlockError(null)
 
     try {
-      // ── Payment ────────────────────────────────────────────────────────
+      // ── Payment gate ────────────────────────────────────────────────────
       const priceMap: Record<string, number> = {
         view: record.price_view,
         cite: record.price_cite,
         license: record.price_license,
       }
-      // Prices stored as integer octas (1 APT = 100_000_000 octas)
-      // e.g. price_view: 10000 = 0.0001 APT
       const priceOctas = Math.round(priceMap[tier] || record.price_view)
+      const isFree = priceOctas === 0
 
-      if (priceOctas > 0 && connected && signAndSubmitTransaction && record.publisher_address) {
+      if (!isFree) {
+        // Must be connected to pay
+        if (!connected || !signAndSubmitTransaction) {
+          throw new Error('Connect your wallet to unlock this record.')
+        }
+        if (!record.publisher_address) {
+          throw new Error('Publisher address not found — cannot process payment.')
+        }
+
         const platformOctas = Math.round(priceOctas * PLATFORM_FEE_PCT)
         const publisherOctas = priceOctas - platformOctas
 
-        // Pay publisher (90%) — use wallet adapter payload format directly
+        // Pay publisher (90%)
         if (publisherOctas > 0) {
           await signAndSubmitTransaction({
             data: {
