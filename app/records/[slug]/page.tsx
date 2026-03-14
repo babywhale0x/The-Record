@@ -4,86 +4,85 @@ import { CONTENT_TYPES, LICENSE_TIERS } from '@/lib/content-types'
 import ContentTypeBadge from '@/components/ui/ContentTypeBadge'
 import styles from './record.module.css'
 
+interface SourceDoc { id: string; name: string; content_hash: string; blob_name?: string }
 interface RecordData {
-  id: string
-  slug: string
-  title: string
-  excerpt: string
-  body?: string
-  content_type: string
-  publisher_name: string
-  publisher_id?: string
-  tags: string[]
-  blob_name?: string
-  aptos_tx_hash?: string
-  content_hash?: string
-  shelby_network?: string
-  price_view: number
-  price_cite: number
-  price_license: number
-  created_at: string
-  source_documents?: { id: string; name: string; content_hash: string }[]
+  id: string; slug: string; title: string; excerpt: string
+  content_type: string; publisher_name: string; tags: string[]
+  blob_name?: string; aptos_tx_hash?: string; content_hash?: string
+  shelby_network?: string; price_view: number; price_cite: number
+  price_license: number; created_at: string
+  source_documents?: SourceDoc[]
 }
 
 export default function RecordPage({ params }: { params: { slug: string } }) {
   const [record, setRecord] = useState<RecordData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTier, setActiveTier] = useState<string | null>(null)
-  const [purchased, setPurchased] = useState(false)
-  const [purchasing, setPurchasing] = useState(false)
+  const [unlocking, setUnlocking] = useState(false)
+  const [unlocked, setUnlocked] = useState(false)
+  const [fullBody, setFullBody] = useState<string | null>(null)
+  const [unlockError, setUnlockError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/records/${params.slug}`)
       .then((r) => r.json())
-      .then((data) => {
-        if (data.record) setRecord(data.record)
-        setLoading(false)
-      })
+      .then((data) => { if (data.record) setRecord(data.record); setLoading(false) })
       .catch(() => setLoading(false))
   }, [params.slug])
 
-  const handlePurchase = async (tier: string) => {
-    setPurchasing(true)
+  const handleUnlock = async (tier: string) => {
+    if (!record?.blob_name) return
+    setUnlocking(true)
     setActiveTier(tier)
-    await new Promise((r) => setTimeout(r, 1400))
-    setPurchasing(false)
-    setPurchased(true)
+    setUnlockError(null)
+
+    try {
+      // TODO: real APT payment before fetch
+      // For now: fetch full content from Shelby directly
+      const res = await fetch(`/api/stream/${record.blob_name}`)
+      if (!res.ok) throw new Error(`Failed to fetch content: ${res.status}`)
+
+      const raw = await res.text()
+      // Article was stored as JSON — parse and extract body
+      try {
+        const parsed = JSON.parse(raw)
+        setFullBody(parsed.body || parsed.excerpt || raw)
+      } catch {
+        setFullBody(raw)
+      }
+
+      setUnlocked(true)
+    } catch (err: any) {
+      setUnlockError(err?.message || 'Failed to unlock. Please try again.')
+    } finally {
+      setUnlocking(false)
+    }
   }
 
-  if (loading) {
-    return (
-      <main className={styles.page}>
-        <div className={styles.notFound}>
-          <p>Loading…</p>
-        </div>
-      </main>
-    )
-  }
+  if (loading) return (
+    <main className={styles.page}>
+      <div className={styles.notFound}><p>Loading…</p></div>
+    </main>
+  )
 
-  if (!record) {
-    return (
-      <main className={styles.page}>
-        <div className={styles.notFound}>
-          <h1>Record not found</h1>
-          <a href="/">← Back to home</a>
-        </div>
-      </main>
-    )
-  }
+  if (!record) return (
+    <main className={styles.page}>
+      <div className={styles.notFound}>
+        <h1>Record not found</h1>
+        <a href="/">← Back to home</a>
+      </div>
+    </main>
+  )
 
-  const ct = CONTENT_TYPES[record.content_type as keyof typeof CONTENT_TYPES]
   const date = new Date(record.created_at).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric'
   })
-
+  const txHash = record.aptos_tx_hash || ''
   const tiers = {
     view: record.price_view / 100,
     cite: record.price_cite / 100,
     license: record.price_license / 100,
   }
-
-  const txHash = record.aptos_tx_hash || ''
-  const bodyText = record.body || record.excerpt || ''
 
   return (
     <main className={styles.page}>
@@ -95,13 +94,11 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
         <ContentTypeBadge type={record.content_type as any} size="md" />
         <h1 className={styles.title}>{record.title}</h1>
         <p className={styles.excerpt}>{record.excerpt}</p>
-
         <div className={styles.meta}>
           <span className={styles.publisher}>{record.publisher_name}</span>
           <span className={styles.metaDot}>·</span>
           <span className={styles.date}>{date}</span>
         </div>
-
         {txHash && (
           <div className={styles.proofBar}>
             <div className={styles.proofItem}>
@@ -124,12 +121,12 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
       </div>
 
       <div className={styles.viewerWrap}>
-        {!purchased ? (
+        {!unlocked ? (
           <>
             <div className={styles.preview}>
               <div className={styles.previewContent}>
                 <p className={styles.previewText}>
-                  {bodyText.slice(0, 280)}{bodyText.length > 280 ? '…' : ''}
+                  {record.excerpt}{record.excerpt.length > 200 ? '…' : ''}
                 </p>
               </div>
               <div className={styles.previewFade} />
@@ -141,6 +138,12 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
                 Full document locked. Select a license tier below to unlock.
               </span>
             </div>
+
+            {unlockError && (
+              <div style={{ color: '#ef4444', fontSize: 13, padding: '10px 0' }}>
+                ⚠ {unlockError}
+              </div>
+            )}
 
             <div className={styles.tiers}>
               <h2 className={styles.tiersTitle}>Choose a license</h2>
@@ -155,11 +158,7 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
                     >
                       <div className={styles.tierTop}>
                         <span className={styles.tierLabel} style={{ color: tier.color }}>{tier.label}</span>
-                        {price != null ? (
-                          <span className={styles.tierPrice}>${price}</span>
-                        ) : (
-                          <span className={styles.tierPrice}>Custom</span>
-                        )}
+                        <span className={styles.tierPrice}>{price != null ? `$${price}` : 'Custom'}</span>
                       </div>
                       <p className={styles.tierDesc}>{tier.description}</p>
                       <ul className={styles.tierFeatures}>
@@ -173,11 +172,11 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
                       <button
                         className={styles.tierBtn}
                         style={{ background: tier.color }}
-                        onClick={() => handlePurchase(tier.id)}
-                        disabled={purchasing}
+                        onClick={() => handleUnlock(tier.id)}
+                        disabled={unlocking}
                       >
-                        {purchasing && activeTier === tier.id
-                          ? 'Processing…'
+                        {unlocking && activeTier === tier.id
+                          ? 'Unlocking…'
                           : tier.id === 'institutional'
                           ? 'Contact us →'
                           : `Unlock for $${price} →`}
@@ -192,10 +191,12 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
           <div className={styles.viewer}>
             <div className={styles.viewerHeader}>
               <span className={styles.viewerTier}>{activeTier?.toUpperCase()} ACCESS</span>
-              <span className={styles.viewerWatermark}>Watermarked · {record.content_hash?.slice(0, 10) || '0x…'}</span>
+              <span className={styles.viewerWatermark}>
+                Watermarked · {record.content_hash?.slice(0, 10) || '0x…'}
+              </span>
             </div>
             <div className={styles.viewerBody} onContextMenu={(e) => e.preventDefault()}>
-              {bodyText.split('\n\n').map((para, i) => (
+              {(fullBody || record.excerpt).split('\n\n').map((para, i) => (
                 <p key={i} className={styles.viewerPara}>{para}</p>
               ))}
             </div>
@@ -209,6 +210,16 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
                       <span className={styles.sourceDocName}>{doc.name}</span>
                       <span className={styles.sourceDocHash}>{doc.content_hash?.slice(0, 24)}…</span>
                     </div>
+                    {doc.blob_name && (
+                      <a
+                        href={`/api/stream/${doc.blob_name}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.sourceDocVerify}
+                      >
+                        Download ↓
+                      </a>
+                    )}
                     <button className={styles.sourceDocVerify}>Verify ✓</button>
                   </div>
                 ))}

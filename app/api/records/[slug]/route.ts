@@ -22,7 +22,7 @@ export async function GET(
       publisher_name, publisher_id, tags,
       blob_name, aptos_tx_hash, content_hash, shelby_network,
       price_view, price_cite, price_license, created_at,
-      source_documents (id, name, content_hash)
+      source_documents (id, name, content_hash, blob_name)
     `)
     .eq('slug', params.slug)
     .single()
@@ -36,7 +36,7 @@ export async function GET(
         publisher_name, publisher_id, tags,
         blob_name, aptos_tx_hash, content_hash, shelby_network,
         price_view, price_cite, price_license, created_at,
-        source_documents (id, name, content_hash)
+        source_documents (id, name, content_hash, blob_name)
       `)
       .eq('slug', params.slug)
       .single()

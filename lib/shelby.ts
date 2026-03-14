@@ -232,29 +232,22 @@ export async function getBlob(
   range?: { start: number; end: number }
 ): Promise<BlobContent> {
   try {
-    const { ShelbyNodeClient } = await import('@shelby-protocol/sdk/node')
-    const { Network } = await import('@aptos-labs/ts-sdk')
+    const shelbyRpcUrl = 'https://api.testnet.shelby.xyz/shelby'
+    const url = `${shelbyRpcUrl}/v1/blobs/${config.accountAddress}/${encodeURIComponent(blobName)}`
 
-    const shelbyClient = new ShelbyNodeClient({
-      network: Network.TESTNET,
-      ...(config.apiKey ? { apiKey: config.apiKey } : {}),
-      indexer: { endpoint: 'https://api.testnet.aptoslabs.com/nocode/v1/public/cmforrguw0042s601fn71f9l2/v1/graphql' },
-    } as any)
+    const headers: Record<string, string> = {}
+    if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`
+    if (range) headers['Range'] = `bytes=${range.start}-${range.end}`
 
-    const blob = await shelbyClient.download({
-      account: config.accountAddress,
-      blobName,
-    }) as any
+    const res = await fetch(url, { headers })
+    if (!res.ok) throw new ShelbyError(`Get blob failed: ${res.status} ${res.statusText}`)
 
-    const chunks: Buffer[] = []
-    for await (const chunk of blob.stream) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as any))
-    }
-    const data = new Uint8Array(Buffer.concat(chunks))
+    const arrayBuf = await res.arrayBuffer()
+    const data = new Uint8Array(arrayBuf)
 
     return {
       data,
-      contentType: 'application/octet-stream',
+      contentType: res.headers.get('content-type') || 'application/octet-stream',
       blobName,
       retrievedAt: Date.now(),
       totalBytes: data.byteLength,
