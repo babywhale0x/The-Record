@@ -21,7 +21,7 @@ interface RecordForm {
 
 const EMPTY_FORM: RecordForm = {
   title: '', excerpt: '', body: '', contentType: '',
-  tags: '', priceView: '5', priceCite: '19', priceLicense: '99',
+  tags: '', priceView: '0.01', priceCite: '0.02', priceLicense: '0.05',
 }
 
 export default function DashboardPage() {
@@ -97,9 +97,9 @@ export default function DashboardPage() {
         slug, title: form.title, excerpt: form.excerpt, body: form.body,
         contentType: form.contentType,
         tags: form.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
-        priceView: parseFloat(form.priceView),
-        priceCite: parseFloat(form.priceCite),
-        priceLicense: parseFloat(form.priceLicense),
+        priceView: Math.round(parseFloat(form.priceView) * 1e8),
+        priceCite: Math.round(parseFloat(form.priceCite) * 1e8),
+        priceLicense: Math.round(parseFloat(form.priceLicense) * 1e8),
         publisherAddress: address,
         publishedAt: Date.now(),
       })
@@ -126,9 +126,9 @@ export default function DashboardPage() {
             slug, title: form.title, excerpt: form.excerpt, body: form.body,
             contentType: form.contentType,
             tags: form.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
-            priceView: parseFloat(form.priceView),
-            priceCite: parseFloat(form.priceCite),
-            priceLicense: parseFloat(form.priceLicense),
+            priceView: Math.round(parseFloat(form.priceView) * 1e8),
+            priceCite: Math.round(parseFloat(form.priceCite) * 1e8),
+            priceLicense: Math.round(parseFloat(form.priceLicense) * 1e8),
             publisherAddress: address,
           },
           articleReceipt,
@@ -382,19 +382,19 @@ export default function DashboardPage() {
           {publishStep === 'pricing' && (
             <div className={styles.formSection}>
               <h2 className={styles.formTitle}>Set your prices</h2>
-              <p className={styles.formSub}>Readers pay in APT. Prices shown in USD equivalent.</p>
+              <p className={styles.formSub}>Set prices in APT. Readers pay directly from their wallet.</p>
               <div className={styles.pricingGrid}>
                 {[
-                  {tier:'View',key:'priceView' as const,desc:'48h read-only access, watermarked',suggested:'$5'},
-                  {tier:'Cite',key:'priceCite' as const,desc:'Permanent citation rights + signed PDF',suggested:'$19'},
-                  {tier:'License',key:'priceLicense' as const,desc:'Full download + Certificate of Authenticity',suggested:'$99'},
+                  {tier:'View',key:'priceView' as const,desc:'48h read-only access, watermarked',suggested:'0.01 APT'},
+                  {tier:'Cite',key:'priceCite' as const,desc:'Permanent citation rights + signed PDF',suggested:'0.02 APT'},
+                  {tier:'License',key:'priceLicense' as const,desc:'Full download + Certificate of Authenticity',suggested:'0.05 APT'},
                 ].map(({tier,key,desc,suggested})=>(
                   <div key={tier} className={styles.priceCard}>
                     <div className={styles.priceCardTop}><span className={styles.priceTier}>{tier}</span><span className={styles.priceSuggested}>Suggested: {suggested}</span></div>
                     <p className={styles.priceDesc}>{desc}</p>
                     <div className={styles.priceInputWrap}>
-                      <span className={styles.priceCurrency}>$</span>
-                      <input className={styles.priceInput} type="number" min="0" step="0.01" value={form[key]} onChange={e=>up(key,e.target.value)} />
+                      <span className={styles.priceCurrency}>APT</span>
+                      <input className={styles.priceInput} type="number" min="0" step="0.0001" value={form[key]} onChange={e=>up(key,e.target.value)} />
                     </div>
                   </div>
                 ))}
@@ -416,7 +416,7 @@ export default function DashboardPage() {
                   ['Title',form.title],
                   ['Type',form.contentType],
                   ['Documents',`${docs.length} file${docs.length!==1?'s':''}`],
-                  ['Pricing',`View $${form.priceView} · Cite $${form.priceCite} · License $${form.priceLicense}`],
+                  ['Pricing',`View ${form.priceView} APT · Cite ${form.priceCite} APT · License ${form.priceLicense} APT`],
                   ['Publisher',shortAddr],
                 ].map(([l,v])=>(
                   <div key={l} className={styles.reviewRow}><span className={styles.reviewLabel}>{l}</span><span className={styles.reviewValue} style={l==='Publisher'?{fontFamily:'var(--font-mono)',fontSize:'11px'}:{}}>{v}</span></div>

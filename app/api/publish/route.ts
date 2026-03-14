@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
         content_type: article.contentType || 'journalism',
         publisher_id: publisherId,
         publisher_name: article.publisherAddress?.slice(0, 10) || 'Anonymous',
+        publisher_address: article.publisherAddress || null,
         tags: article.tags || [],
         blob_name: articleReceipt.blobName,
         aptos_tx_hash: articleReceipt.aptosTxHash,

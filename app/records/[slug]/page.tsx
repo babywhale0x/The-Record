@@ -48,7 +48,8 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
         cite: record.price_cite,
         license: record.price_license,
       }
-      const priceOctas = Math.round(priceMap[tier] || record.price_view)
+      const priceOctas = Math.round(priceMap[tier] ?? record.price_view)
+      // Consider free only if explicitly set to 0, minimum payable is 1 octa
       const isFree = priceOctas === 0
 
       if (!isFree) {
