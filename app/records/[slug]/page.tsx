@@ -51,36 +51,29 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
       const priceOctas = priceMap[tier] || record.price_view // stored as octas (1e8 = 1 APT)
 
       if (priceOctas > 0 && connected && signAndSubmitTransaction && record.publisher_address) {
-        const { Aptos, AptosConfig, Network } = await import('@aptos-labs/ts-sdk')
-        const aptosClient = new Aptos(new AptosConfig({ network: Network.TESTNET }))
-
         const platformOctas = Math.round(priceOctas * PLATFORM_FEE_PCT)
         const publisherOctas = priceOctas - platformOctas
 
-        // Pay publisher (90%)
+        // Pay publisher (90%) — use wallet adapter payload format directly
         if (publisherOctas > 0) {
-          const pubTx = await aptosClient.transaction.build.simple({
-            sender: account!.address,
+          await signAndSubmitTransaction({
             data: {
               function: '0x1::coin::transfer',
               typeArguments: ['0x1::aptos_coin::AptosCoin'],
               functionArguments: [record.publisher_address, publisherOctas],
             },
-          })
-          await signAndSubmitTransaction({ data: pubTx.rawTransaction } as any)
+          } as any)
         }
 
         // Pay platform (10%)
         if (platformOctas > 0) {
-          const platTx = await aptosClient.transaction.build.simple({
-            sender: account!.address,
+          await signAndSubmitTransaction({
             data: {
               function: '0x1::coin::transfer',
               typeArguments: ['0x1::aptos_coin::AptosCoin'],
               functionArguments: [PLATFORM_ADDRESS, platformOctas],
             },
-          })
-          await signAndSubmitTransaction({ data: platTx.rawTransaction } as any)
+          } as any)
         }
       }
 
