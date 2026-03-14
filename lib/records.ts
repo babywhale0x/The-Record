@@ -243,3 +243,21 @@ export function getFeaturedRecords(): Record[] {
 export function getRecordsByType(type: ContentType): Record[] {
   return RECORDS.filter((r) => r.contentType === type)
 }
+
+// ─── Convert mock records to feed shape for display ──────────────────────────
+export function getMockFeedRecords() {
+  return RECORDS.map((r) => ({
+    id: r.id,
+    slug: r.slug,
+    title: r.title,
+    excerpt: r.excerpt,
+    content_type: r.contentType,
+    publisher_name: r.publisherName,
+    tags: r.tags,
+    aptos_tx_hash: r.aptosTxHash,
+    content_hash: r.blockHash,
+    price_view: Math.round(r.basePriceUsd * 100),
+    created_at: r.publishedAt,
+    is_demo: true,
+  }))
+}

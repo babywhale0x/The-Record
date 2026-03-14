@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { CONTENT_TYPES, LICENSE_TIERS } from '@/lib/content-types'
 import ContentTypeBadge from '@/components/ui/ContentTypeBadge'
+import { useWallet } from '@aptos-labs/wallet-adapter-react'
 import styles from './record.module.css'
 
 interface SourceDoc { id: string; name: string; content_hash: string; blob_name?: string }
@@ -22,6 +23,7 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
   const [unlocked, setUnlocked] = useState(false)
   const [fullBody, setFullBody] = useState<string | null>(null)
   const [unlockError, setUnlockError] = useState<string | null>(null)
+  const { account, signAndSubmitTransaction, connected } = useWallet()
 
   useEffect(() => {
     fetch(`/api/records/${params.slug}`)
@@ -30,6 +32,9 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
       .catch(() => setLoading(false))
   }, [params.slug])
 
+  const PLATFORM_ADDRESS = '0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8'
+  const PLATFORM_FEE_PCT = 0.1 // 10% to platform
+
   const handleUnlock = async (tier: string) => {
     if (!record?.blob_name) return
     setUnlocking(true)
@@ -37,16 +42,55 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
     setUnlockError(null)
 
     try {
-      // TODO: real APT payment before fetch
-      // For now: fetch full content from Shelby directly
-      // blob is stored under publisher's address on Shelby
+      // ── Payment ────────────────────────────────────────────────────────
+      const priceMap: Record<string, number> = {
+        view: record.price_view,
+        cite: record.price_cite,
+        license: record.price_license,
+      }
+      const priceOctas = priceMap[tier] || record.price_view // stored as octas (1e8 = 1 APT)
+
+      if (priceOctas > 0 && connected && signAndSubmitTransaction && record.publisher_address) {
+        const { Aptos, AptosConfig, Network } = await import('@aptos-labs/ts-sdk')
+        const aptosClient = new Aptos(new AptosConfig({ network: Network.TESTNET }))
+
+        const platformOctas = Math.round(priceOctas * PLATFORM_FEE_PCT)
+        const publisherOctas = priceOctas - platformOctas
+
+        // Pay publisher (90%)
+        if (publisherOctas > 0) {
+          const pubTx = await aptosClient.transaction.build.simple({
+            sender: account!.address,
+            data: {
+              function: '0x1::coin::transfer',
+              typeArguments: ['0x1::aptos_coin::AptosCoin'],
+              functionArguments: [record.publisher_address, publisherOctas],
+            },
+          })
+          await signAndSubmitTransaction({ data: pubTx.rawTransaction } as any)
+        }
+
+        // Pay platform (10%)
+        if (platformOctas > 0) {
+          const platTx = await aptosClient.transaction.build.simple({
+            sender: account!.address,
+            data: {
+              function: '0x1::coin::transfer',
+              typeArguments: ['0x1::aptos_coin::AptosCoin'],
+              functionArguments: [PLATFORM_ADDRESS, platformOctas],
+            },
+          })
+          await signAndSubmitTransaction({ data: platTx.rawTransaction } as any)
+        }
+      }
+
+      // ── Fetch content from Shelby ──────────────────────────────────────
       const addr = record.publisher_address || ''
       const streamPath = addr ? `${addr}/${record.blob_name}` : record.blob_name
       const res = await fetch(`/api/stream/${streamPath}`)
       if (!res.ok) throw new Error(`Failed to fetch content: ${res.status}`)
 
       const raw = await res.text()
-      // Article was stored as JSON — parse and extract body
       try {
         const parsed = JSON.parse(raw)
         setFullBody(parsed.body || parsed.excerpt || raw)
