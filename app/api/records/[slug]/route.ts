@@ -20,7 +20,7 @@ export async function GET(
     .select(`
       id, slug, title, excerpt, body, content_type,
       publisher_name, publisher_id, tags,
-      blob_name, aptos_tx_hash, content_hash, shelby_network,
+      blob_name, aptos_tx_hash, content_hash, shelby_network, publisher_address, publisher_address,
       price_view, price_cite, price_license, created_at,
       source_documents (id, name, content_hash, blob_name)
     `)
@@ -34,7 +34,7 @@ export async function GET(
       .select(`
         id, slug, title, excerpt, content_type,
         publisher_name, publisher_id, tags,
-        blob_name, aptos_tx_hash, content_hash, shelby_network,
+        blob_name, aptos_tx_hash, content_hash, shelby_network, publisher_address, publisher_address,
         price_view, price_cite, price_license, created_at,
         source_documents (id, name, content_hash, blob_name)
       `)

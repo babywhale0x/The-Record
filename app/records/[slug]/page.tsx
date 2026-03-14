@@ -9,7 +9,7 @@ interface RecordData {
   id: string; slug: string; title: string; excerpt: string
   content_type: string; publisher_name: string; tags: string[]
   blob_name?: string; aptos_tx_hash?: string; content_hash?: string
-  shelby_network?: string; price_view: number; price_cite: number
+  publisher_address?: string; shelby_network?: string; price_view: number; price_cite: number
   price_license: number; created_at: string
   source_documents?: SourceDoc[]
 }
@@ -39,7 +39,10 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
     try {
       // TODO: real APT payment before fetch
       // For now: fetch full content from Shelby directly
-      const res = await fetch(`/api/stream/${record.blob_name}`)
+      // blob is stored under publisher's address on Shelby
+      const addr = record.publisher_address || ''
+      const streamPath = addr ? `${addr}/${record.blob_name}` : record.blob_name
+      const res = await fetch(`/api/stream/${streamPath}`)
       if (!res.ok) throw new Error(`Failed to fetch content: ${res.status}`)
 
       const raw = await res.text()
@@ -212,7 +215,7 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
                     </div>
                     {doc.blob_name && (
                       <a
-                        href={`/api/stream/${doc.blob_name}`}
+                        href={`/api/stream/${record.publisher_address ? record.publisher_address + '/' : ''}${doc.blob_name}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={styles.sourceDocVerify}
