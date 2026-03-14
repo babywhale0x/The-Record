@@ -62,27 +62,39 @@ export default function WalletPage() {
       const parsed: Transaction[] = txns
         .filter((t: any) => t.type === 'user_transaction')
         .map((t: any) => {
-          const payload = t.payload || {}
-          const args = payload.arguments || []
-          const fn = String(payload.function || '')
-          const isCoinTransfer = fn.includes('coin::transfer') || fn.includes('aptos_account::transfer')
-          if (!isCoinTransfer) return null
+          try {
+            const payload = t.payload || {}
+            const args = payload.arguments || []
+            const fn = String(payload.function || '')
 
-          // args[0] is recipient address, args[1] is amount in octas
-          const to = args[0] ? String(args[0]) : ''
-          const amountOctas = args[1] ? parseInt(String(args[1])) : 0
-          if (isNaN(amountOctas) || amountOctas <= 0) return null
-          const amount = amountOctas / 1e8
-          const isOutgoing = String(t.sender) === address
+            // Only process simple coin transfers
+            const isCoinTransfer = fn === '0x1::coin::transfer' ||
+              fn === '0x1::aptos_account::transfer' ||
+              fn.endsWith('::coin::transfer')
+            if (!isCoinTransfer) return null
 
-          return {
-            hash: String(t.hash),
-            type: isOutgoing ? 'sent' : 'received',
-            amount,
-            counterparty: isOutgoing ? to : String(t.sender),
-            timestamp: Math.floor(parseInt(String(t.timestamp)) / 1000),
-            success: t.success,
-          }
+            // args[0] must be a plain string address, args[1] must be numeric string
+            const to = args[0]
+            const amountRaw = args[1]
+            if (typeof to !== 'string' || !to.startsWith('0x')) return null
+            if (typeof amountRaw !== 'string' && typeof amountRaw !== 'number') return null
+
+            const amountOctas = parseInt(String(amountRaw))
+            if (isNaN(amountOctas) || amountOctas <= 0 || amountOctas > 1e15) return null
+
+            const amount = amountOctas / 1e8
+            const senderStr = String(t.sender)
+            const isOutgoing = senderStr === address
+
+            return {
+              hash: String(t.hash),
+              type: isOutgoing ? 'sent' as const : 'received' as const,
+              amount,
+              counterparty: isOutgoing ? to : senderStr,
+              timestamp: Math.floor(parseInt(String(t.timestamp)) / 1000),
+              success: Boolean(t.success),
+            }
+          } catch { return null }
         })
         .filter(Boolean) as Transaction[]
 

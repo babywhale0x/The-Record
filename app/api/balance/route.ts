@@ -5,27 +5,26 @@ export const runtime = 'nodejs'
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const address = searchParams.get('address')
-
-  // If address param provided, fetch that wallet's balance publicly
   const targetAddress = address || process.env.APTOS_ACCOUNT_ADDRESS || ''
 
-  if (!targetAddress) {
-    return NextResponse.json({ apt: 0, shelbyUsd: 0 })
-  }
+  if (!targetAddress) return NextResponse.json({ apt: 0, shelbyUsd: 0 })
 
   try {
+    // Try with API key first, fall back to no auth
     const apiKey = process.env.APTOS_API_KEY || process.env.SHELBY_API_KEY || ''
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (apiKey) headers['x-api-key'] = apiKey
-
-    const res = await fetch(
-      `https://api.testnet.aptoslabs.com/v1/accounts/${targetAddress}/resources`,
-      { headers }
-    )
-
-    if (!res.ok) {
-      return NextResponse.json({ apt: 0, shelbyUsd: 0 })
+    
+    const tryFetch = async (withAuth: boolean) => {
+      const headers: Record<string, string> = {}
+      if (withAuth && apiKey) headers['Authorization'] = `Bearer ${apiKey}`
+      return fetch(
+        `https://api.testnet.aptoslabs.com/v1/accounts/${targetAddress}/resources`,
+        { headers }
+      )
     }
+
+    let res = await tryFetch(true)
+    if (!res.ok) res = await tryFetch(false)
+    if (!res.ok) return NextResponse.json({ apt: 0, shelbyUsd: 0 })
 
     const resources = await res.json()
     const aptResource = resources.find(
@@ -38,7 +37,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ apt, shelbyUsd: 0 })
   } catch (err) {
-    console.error('[balance] error:', err)
+    console.error('[balance]', err)
     return NextResponse.json({ apt: 0, shelbyUsd: 0 })
   }
 }
