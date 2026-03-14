@@ -90,7 +90,7 @@ function FeedCard({ record }: { record: FeedRecord }) {
     <Link href={`/records/${record.slug}`} className={styles.card}>
       <div className={styles.top}>
         <ContentTypeBadge type={record.content_type as any} size="sm" />
-        <span className={styles.price}>{((record.price_view || 0) / 1e8).toFixed(4)} APT</span>
+        <span className={styles.price}>{parseFloat(((record.price_view || 0) / 10000).toFixed(4)).toString()} APT</span>
       </div>
 
       <h3 className={styles.cardTitle}>{record.title}</h3>

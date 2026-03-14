@@ -20,7 +20,7 @@ function RecordCard({ record }: { record: HomeRecord }) {
     <Link href={`/records/${record.slug}`} className={styles.card}>
       <div className={styles.cardTop}>
         <ContentTypeBadge type={record.content_type as any} size="sm" />
-        <span className={styles.cardPrice}>{((record.price_view || 0) / 1e8).toFixed(4)} APT</span>
+        <span className={styles.cardPrice}>{parseFloat(((record.price_view || 0) / 10000).toFixed(4)).toString()} APT</span>
       </div>
       <h3 className={styles.cardTitle}>{record.title}</h3>
       <p className={styles.cardExcerpt}>{record.excerpt}</p>

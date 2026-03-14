@@ -75,9 +75,9 @@ export async function POST(req: NextRequest) {
         content_hash: articleReceipt.contentHash,
         shelby_network: 'testnet',
         expires_at: expiresAt,
-        price_view: article.priceView || 5,
-        price_cite: article.priceCite || 19,
-        price_license: article.priceLicense || 99,
+        price_view: article.priceView ?? 0,
+        price_cite: article.priceCite ?? 0,
+        price_license: article.priceLicense ?? 0,
         is_public: true,
       })
       .select('id')

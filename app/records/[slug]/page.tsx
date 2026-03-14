@@ -48,9 +48,10 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
         cite: record.price_cite,
         license: record.price_license,
       }
-      const priceOctas = Math.round(priceMap[tier] ?? record.price_view)
-      // Consider free only if explicitly set to 0, minimum payable is 1 octa
-      const isFree = priceOctas === 0
+      // price stored as apt*10000, convert to octas for wallet (1 APT = 1e8 octas)
+      const priceRaw = priceMap[tier] ?? record.price_view
+      const priceOctas = Math.round((priceRaw / 10000) * 1e8)
+      const isFree = priceRaw === 0
 
       if (!isFree) {
         // Must be connected to pay
@@ -128,13 +129,12 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
     day: 'numeric', month: 'long', year: 'numeric'
   })
   const txHash = record.aptos_tx_hash || ''
-  // Prices stored as octas (1 APT = 1e8 octas)
-  const toApt = (octas: number) => {
-    const apt = octas / 1e8
-    // Show meaningful decimals, strip trailing zeros
+  // Prices stored as apt * 10000 (e.g. 0.01 APT stored as 100)
+  const toApt = (val: number) => {
+    const apt = val / 10000
     if (apt === 0) return '0'
-    if (apt >= 1) return apt.toFixed(2)
-    return apt.toFixed(8).replace(/0+$/, '')
+    // Strip trailing zeros
+    return parseFloat(apt.toFixed(4)).toString()
   }
   const tiers = {
     view: toApt(record.price_view),
