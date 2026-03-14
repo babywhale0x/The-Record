@@ -92,3 +92,52 @@
 }
 .txEmptyIcon { font-size: 32px; color: var(--border); margin-bottom: 8px; }
 .txEmptyNote { font-size: 11px; color: var(--text-muted); }
+
+/* ── New additions ─────────────────────────────────────────────────────── */
+.refreshBtn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 10px;
+  transition: color 0.15s;
+}
+.refreshBtn:hover { color: var(--text); }
+.explorerLink { color: var(--accent); text-decoration: none; font-size: 12px; }
+.explorerLink:hover { text-decoration: underline; }
+.recordsList { display: flex; flex-direction: column; gap: 2px; }
+.recordRow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  text-decoration: none; transition: border-color 0.15s;
+}
+.recordRow:hover { border-color: var(--accent); }
+.recordTitle { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+.recordDate { font-size: 11px; color: var(--text-muted); }
+.recordArrow { color: var(--text-muted); font-size: 13px; }
+.txList { display: flex; flex-direction: column; gap: 2px; }
+.txRow {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  text-decoration: none; transition: border-color 0.15s;
+}
+.txRow:hover { border-color: var(--accent); }
+.txIcon {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.txIconIn { background: rgba(16,185,129,0.15); color: #10b981; }
+.txIconOut { background: rgba(239,68,68,0.12); color: #ef4444; }
+.txInfo { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.txType { font-size: 13px; color: var(--text); font-weight: 500; }
+.txDate { font-size: 11px; color: var(--text-muted); }
+.txAmount { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.txAmountNum { font-size: 13px; font-weight: 700; font-family: monospace; }
+.txAmountIn { color: #10b981; }
+.txAmountOut { color: var(--text); }
+.txFailed { font-size: 10px; color: #ef4444; font-weight: 700; letter-spacing: 0.05em; }
