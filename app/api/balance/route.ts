@@ -14,9 +14,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const apiKey = process.env.SHELBY_API_KEY || ''
+    const apiKey = process.env.APTOS_API_KEY || process.env.SHELBY_API_KEY || ''
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
+    if (apiKey) headers['x-api-key'] = apiKey
 
     const res = await fetch(
       `https://api.testnet.aptoslabs.com/v1/accounts/${targetAddress}/resources`,

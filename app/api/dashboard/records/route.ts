@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabaseAdmin
     .from('records')
-    .select('id, slug, title, content_type, published_at, view_count, license_count, blob_name, aptos_tx_hash, is_public, featured')
+    .select('id, slug, title, content_type, created_at, view_count, license_count, blob_name, aptos_tx_hash, is_public, featured')
     .order('published_at', { ascending: false })
     .limit(50)
 

@@ -64,22 +64,27 @@ export default function WalletPage() {
         .map((t: any) => {
           const payload = t.payload || {}
           const args = payload.arguments || []
-          const fn = payload.function || ''
+          const fn = String(payload.function || '')
           const isCoinTransfer = fn.includes('coin::transfer') || fn.includes('aptos_account::transfer')
-          const amount = isCoinTransfer && args[1] ? parseInt(args[1]) / 1e8 : 0
-          const to = isCoinTransfer && args[0] ? args[0] : ''
-          const isOutgoing = t.sender === address
+          if (!isCoinTransfer) return null
+
+          // args[0] is recipient address, args[1] is amount in octas
+          const to = args[0] ? String(args[0]) : ''
+          const amountOctas = args[1] ? parseInt(String(args[1])) : 0
+          if (isNaN(amountOctas) || amountOctas <= 0) return null
+          const amount = amountOctas / 1e8
+          const isOutgoing = String(t.sender) === address
 
           return {
-            hash: t.hash,
+            hash: String(t.hash),
             type: isOutgoing ? 'sent' : 'received',
             amount,
-            counterparty: isOutgoing ? to : t.sender,
-            timestamp: Math.floor(parseInt(t.timestamp) / 1000),
+            counterparty: isOutgoing ? to : String(t.sender),
+            timestamp: Math.floor(parseInt(String(t.timestamp)) / 1000),
             success: t.success,
           }
         })
-        .filter((t: Transaction) => t.amount > 0)
+        .filter(Boolean) as Transaction[]
 
       setTransactions(parsed)
     } catch {}
@@ -217,7 +222,7 @@ export default function WalletPage() {
               <a key={r.slug} href={`/records/${r.slug}`} className={styles.recordRow}>
                 <span className={styles.recordTitle}>{r.title}</span>
                 <span className={styles.recordDate}>
-                  {new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                 </span>
                 <span className={styles.recordArrow}>→</span>
               </a>
