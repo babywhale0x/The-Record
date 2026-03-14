@@ -128,10 +128,18 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
     day: 'numeric', month: 'long', year: 'numeric'
   })
   const txHash = record.aptos_tx_hash || ''
+  // Prices stored as octas (1 APT = 1e8 octas)
+  const toApt = (octas: number) => {
+    const apt = octas / 1e8
+    // Show meaningful decimals, strip trailing zeros
+    if (apt === 0) return '0'
+    if (apt >= 1) return apt.toFixed(2)
+    return apt.toFixed(8).replace(/0+$/, '')
+  }
   const tiers = {
-    view: record.price_view / 100,
-    cite: record.price_cite / 100,
-    license: record.price_license / 100,
+    view: toApt(record.price_view),
+    cite: toApt(record.price_cite),
+    license: toApt(record.price_license),
   }
 
   return (
