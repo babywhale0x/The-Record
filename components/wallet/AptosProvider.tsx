@@ -1,7 +1,6 @@
 'use client'
 
 import { AptosWalletAdapterProvider } from '@aptos-labs/wallet-adapter-react'
-import { Network } from '@aptos-labs/ts-sdk'
 import { ReactNode } from 'react'
 
 export default function AptosProvider({ children }: { children: ReactNode }) {
@@ -9,7 +8,7 @@ export default function AptosProvider({ children }: { children: ReactNode }) {
     <AptosWalletAdapterProvider
       autoConnect={true}
       dappConfig={{
-        network: Network.TESTNET,
+        network: 'testnet' as any,
         aptosConnectDappId: 'the-record-dapp',
         mizuwallet: {
           manifestURL: 'https://assets.mz.xyz/static/config/mizuwallet-connect-manifest.json',
