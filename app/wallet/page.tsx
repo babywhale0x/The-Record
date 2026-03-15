@@ -48,16 +48,38 @@ export default function WalletPage() {
   const fetchTransactions = useCallback(async () => {
     if (!address) return
     try {
-      const apiKey = process.env.NEXT_PUBLIC_APTOS_API_KEY || ''
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
+      // Fetch both sent (account txns) and received (coin received events)
+      const [sentRes, receivedRes] = await Promise.all([
+        fetch(`https://api.testnet.aptoslabs.com/v1/accounts/${address}/transactions?limit=20`),
+        fetch(`https://api.testnet.aptoslabs.com/v1/accounts/${address}/events/0x1::coin::CoinStore%3C0x1%3A%3Aaptos_coin%3A%3AAptosCoin%3E/deposit_events?limit=20`),
+      ])
 
-      const res = await fetch(
-        `https://api.testnet.aptoslabs.com/v1/accounts/${address}/transactions?limit=20`,
-        { headers }
-      )
-      if (!res.ok) return
-      const txns = await res.json()
+      // Process received payments from events
+      const receivedTxns: Transaction[] = []
+      if (receivedRes.ok) {
+        const events = await receivedRes.json()
+        if (Array.isArray(events)) {
+          for (const evt of events) {
+            const amount = parseInt(String(evt.data?.amount ?? '0'))
+            if (amount > 0) {
+              receivedTxns.push({
+                hash: evt.guid?.account_address || evt.sequence_number || String(Math.random()),
+                type: 'received',
+                amount: amount / 1e8,
+                counterparty: 'Unknown sender',
+                timestamp: Date.now() / 1000,
+                success: true,
+              })
+            }
+          }
+        }
+      }
+
+      if (!sentRes.ok) {
+        setTransactions(receivedTxns)
+        return
+      }
+      const txns = await sentRes.json()
 
       const parsed: Transaction[] = txns
         .filter((t: any) => t.type === 'user_transaction')
@@ -98,7 +120,11 @@ export default function WalletPage() {
         })
         .filter(Boolean) as Transaction[]
 
-      setTransactions(parsed)
+      // Merge sent + received, sort by timestamp desc
+      const all = [...parsed, ...receivedTxns]
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 20)
+      setTransactions(all)
     } catch {}
   }, [address])
 
