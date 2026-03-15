@@ -2,62 +2,67 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const runtime = 'nodejs'
 
+const APT_COIN = '0x1::aptos_coin::AptosCoin'
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const address = searchParams.get('address')
-  const debug = searchParams.get('debug') === '1'
   const targetAddress = address || process.env.APTOS_ACCOUNT_ADDRESS || ''
 
   if (!targetAddress) return NextResponse.json({ apt: 0, shelbyUsd: 0 })
 
   try {
+    // Use the view function endpoint - most reliable way to get APT balance
     const res = await fetch(
-      `https://api.testnet.aptoslabs.com/v1/accounts/${targetAddress}/resources`,
+      'https://api.testnet.aptoslabs.com/v1/view',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          function: '0x1::coin::balance',
+          type_arguments: [APT_COIN],
+          arguments: [targetAddress],
+        }),
+      }
     )
 
-    if (!res.ok) {
-      return NextResponse.json({ apt: 0, shelbyUsd: 0, error: `Aptos API ${res.status}` })
+    if (res.ok) {
+      const data = await res.json()
+      // Returns [balance_in_octas]
+      const octas = parseInt(data?.[0] || '0')
+      if (!isNaN(octas)) {
+        return NextResponse.json({ apt: octas / 1e8, shelbyUsd: 0 })
+      }
     }
 
-    const resources = await res.json()
-    const types = resources.map((r: any) => r.type)
-
-    if (debug) {
-      return NextResponse.json({ types, count: resources.length })
-    }
-
-    // Legacy CoinStore
-    const coinStore = resources.find(
-      (r: any) => r.type === '0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>'
+    // Fallback: try fungible asset balance view function
+    const res2 = await fetch(
+      'https://api.testnet.aptoslabs.com/v1/view',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          function: '0x1::primary_fungible_store::balance',
+          type_arguments: ['0x1::fungible_asset::Metadata'],
+          arguments: [
+            targetAddress,
+            '0x000000000000000000000000000000000000000000000000000000000000000a',
+          ],
+        }),
+      }
     )
-    if (coinStore?.data?.coin?.value) {
-      return NextResponse.json({ apt: parseInt(coinStore.data.coin.value) / 1e8, shelbyUsd: 0 })
+
+    if (res2.ok) {
+      const data2 = await res2.json()
+      const octas = parseInt(data2?.[0] || '0')
+      if (!isNaN(octas) && octas > 0) {
+        return NextResponse.json({ apt: octas / 1e8, shelbyUsd: 0 })
+      }
     }
 
-    // New Fungible Asset - find largest balance
-    const fungibleStores = resources.filter(
-      (r: any) => r.type === '0x1::fungible_asset::FungibleStore'
-    )
-
-    if (fungibleStores.length > 0) {
-      const largest = fungibleStores.reduce((max: any, s: any) => {
-        return parseInt(s.data?.balance || '0') > parseInt(max?.data?.balance || '0') ? s : max
-      }, fungibleStores[0])
-      const apt = parseInt(largest.data?.balance || '0') / 1e8
-      return NextResponse.json({ apt, shelbyUsd: 0 })
-    }
-
-    // Try account balance endpoint directly
-    const balRes = await fetch(
-      `https://api.testnet.aptoslabs.com/v1/accounts/${targetAddress}`
-    )
-    if (balRes.ok) {
-      const acct = await balRes.json()
-      if (debug) return NextResponse.json({ acct })
-    }
-
-    return NextResponse.json({ apt: 0, shelbyUsd: 0, types })
+    return NextResponse.json({ apt: 0, shelbyUsd: 0 })
   } catch (err: any) {
+    console.error('[balance]', err)
     return NextResponse.json({ apt: 0, shelbyUsd: 0, error: err?.message })
   }
 }
