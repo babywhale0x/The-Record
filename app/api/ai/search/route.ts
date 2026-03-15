@@ -45,9 +45,12 @@ Only include genuinely relevant records. No markdown, no backticks, pure JSON on
 Archive:
 ${recordsContext}`
 
+  const anthropicKey = process.env.ANTHROPIC_API_KEY || ''
+  if (!anthropicKey) return NextResponse.json({ error: 'AI not configured' }, { status: 503 })
+
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,

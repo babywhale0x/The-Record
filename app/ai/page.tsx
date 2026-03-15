@@ -164,7 +164,7 @@ export default function AIPage() {
                   <button
                     key={s.text}
                     className={styles.suggestChip}
-                    onClick={() => { setQuery(s.text); handleSubmit(s.text) }}
+                    onClick={() => handleSubmit(s.text)}
                   >
                     <span>{s.icon}</span>
                     <span>{s.text}</span>
@@ -271,7 +271,7 @@ export default function AIPage() {
                     <button
                       key={s}
                       className={styles.askChip}
-                      onClick={() => { setChatHistory([]); handleSubmit(s) }}
+                      onClick={() => handleSubmit(s)}
                     >
                       {s}
                     </button>
@@ -316,7 +316,7 @@ export default function AIPage() {
             />
             <button
               className={styles.chatSendBtn}
-              onClick={() => { handleSubmit(); setQuery('') }}
+              onClick={() => { const q = query; setQuery(''); handleSubmit(q) }}
               disabled={status === 'loading' || !query.trim()}
             >→</button>
           </div>

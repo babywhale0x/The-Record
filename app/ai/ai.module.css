@@ -1,16 +1,20 @@
-.page { min-height: 100vh; padding-bottom: 100px; }
+.page { 
+  min-height: 100vh; 
+  padding-bottom: 100px;
+  padding-left: 0;
+}
 
 .topBar {
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; gap: 10px;
-  padding: 0 20px; height: var(--top-bar-h);
+  padding: 0 20px; height: var(--top-bar-h, 56px);
   background: rgba(10,10,10,0.92); backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
-.title { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+.title { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--text); }
 .badge {
   font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
-  color: var(--gold, #f59e0b); border: 1px solid rgba(245,158,11,0.3);
+  color: #f59e0b; border: 1px solid rgba(245,158,11,0.3);
   border-radius: 3px; padding: 2px 5px;
 }
 
@@ -31,6 +35,7 @@
 
 /* Search area */
 .searchArea { padding: 16px 20px 0; }
+
 .searchWrap {
   display: flex; align-items: flex-start; gap: 0;
   background: var(--surface); border: 1px solid var(--border);
@@ -43,6 +48,7 @@
   flex: 1; background: transparent; border: none; outline: none;
   padding: 12px 8px; font-size: 14px; color: var(--text);
   resize: none; line-height: 1.5; font-family: inherit;
+  min-width: 0;
 }
 .searchInput::placeholder { color: var(--text-muted); }
 .searchBtn {
@@ -61,10 +67,9 @@
   padding: 10px 14px; border-radius: 8px;
   border: 1px solid var(--border); background: var(--surface);
   color: var(--text-muted); font-size: 13px; cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color 0.15s, color 0.15s; width: 100%;
 }
 .suggestChip:hover { border-color: var(--accent); color: var(--text); }
-.suggestChip span:first-child { flex-shrink: 0; }
 
 /* Loading */
 .loadingWrap { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 0; }
@@ -96,13 +101,13 @@
   text-decoration: none; transition: border-color 0.15s;
 }
 .matchCard:hover { border-color: var(--accent); }
-.matchTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.matchScore { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); }
+.matchTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 12px; }
+.matchScore { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
 .matchScoreBar { height: 3px; background: var(--accent); border-radius: 2px; min-width: 20px; }
 .matchTitle { font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 6px; }
 .matchRelevance { font-size: 12px; color: #7c3aed; margin: 0 0 6px; font-style: italic; }
 .matchExcerpt { font-size: 12px; color: var(--text-muted); margin: 0 0 10px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.matchMeta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+.matchMeta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); flex-wrap: wrap; }
 .noMatches { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 14px; }
 .noMatchIcon { font-size: 28px; opacity: 0.3; }
 .noMatchSuggestion { font-size: 13px; color: var(--text-muted); font-style: italic; max-width: 320px; line-height: 1.5; }
@@ -116,15 +121,24 @@
 .keywordChip:hover { border-color: var(--accent); color: var(--accent); }
 
 /* Ask mode */
-.askArea { padding: 16px 20px 0; display: flex; flex-direction: column; height: calc(100vh - 160px); }
-.chatHistory { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 16px; }
+.askArea { 
+  padding: 16px 20px 0; 
+  display: flex; flex-direction: column; 
+  height: calc(100vh - 160px);
+}
+.chatHistory { 
+  flex: 1; overflow-y: auto; 
+  display: flex; flex-direction: column; 
+  gap: 16px; padding-bottom: 16px;
+  min-height: 0;
+}
 .chatEmpty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 0; text-align: center; color: var(--text-muted); font-size: 14px; }
 .chatEmptyIcon { font-size: 32px; opacity: 0.3; }
 .askSuggestions { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 400px; }
 .askChip {
   padding: 10px 14px; border-radius: 8px; font-size: 13px; text-align: left;
   border: 1px solid var(--border); background: var(--surface); color: var(--text-muted);
-  cursor: pointer; transition: all 0.15s;
+  cursor: pointer; transition: all 0.15s; width: 100%;
 }
 .askChip:hover { border-color: var(--accent); color: var(--text); }
 .chatMsg { display: flex; gap: 10px; align-items: flex-start; }
@@ -132,7 +146,8 @@
 .chatAIIcon { font-size: 18px; flex-shrink: 0; margin-top: 4px; color: var(--accent); }
 .chatBubble {
   max-width: 85%; padding: 12px 14px; border-radius: 12px;
-  background: var(--surface); border: 1px solid var(--border); font-size: 13px; line-height: 1.6;
+  background: var(--surface); border: 1px solid var(--border); 
+  font-size: 13px; line-height: 1.6; color: var(--text);
 }
 .chatMsgUser .chatBubble {
   background: var(--accent); border-color: var(--accent); color: white;
@@ -142,17 +157,19 @@
 .chatInputWrap {
   display: flex; gap: 0; border: 1px solid var(--border); border-radius: 10px;
   overflow: hidden; background: var(--surface); margin-top: 12px;
+  flex-shrink: 0;
   transition: border-color 0.15s;
 }
 .chatInputWrap:focus-within { border-color: var(--accent); }
 .chatInput {
   flex: 1; background: transparent; border: none; outline: none;
   padding: 12px 14px; font-size: 14px; color: var(--text);
-  resize: none; font-family: inherit; line-height: 1.5;
+  resize: none; font-family: inherit; line-height: 1.5; min-width: 0;
 }
 .chatInput::placeholder { color: var(--text-muted); }
 .chatSendBtn {
   padding: 12px 16px; background: var(--accent); border: none;
   color: white; font-size: 18px; cursor: pointer; transition: opacity 0.15s;
+  flex-shrink: 0;
 }
 .chatSendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
