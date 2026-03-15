@@ -71,6 +71,15 @@ export default function AIPage() {
       })
       const data = await res.json()
 
+      if (data.error) {
+        const errMsg = data.error
+        setStatus('error')
+        if (mode === 'ask') {
+          setChatHistory(h => [...h, { role: 'ai', text: `⚠ ${errMsg}` }])
+        }
+        return
+      }
+
       if (mode === 'search') {
         setResult(data)
       } else {
@@ -79,10 +88,11 @@ export default function AIPage() {
         setAnswer(aiText)
       }
       setStatus('done')
-    } catch {
+    } catch (err: any) {
       setStatus('error')
+      const msg = err?.message || 'Something went wrong. Please try again.'
       if (mode === 'ask') {
-        setChatHistory(h => [...h, { role: 'ai', text: 'Something went wrong. Please try again.' }])
+        setChatHistory(h => [...h, { role: 'ai', text: `⚠ ${msg}` }])
       }
     }
   }
