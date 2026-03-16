@@ -1,7 +1,5 @@
 'use client'
 
-import { useWallet, groupAndSortWallets, isInstallRequired } from '@aptos-labs/wallet-adapter-react'
-import { useContext, createContext, useState, useContext as useCtx, ReactNode } from 'react'
 import { useWallet, groupAndSortWallets } from '@aptos-labs/wallet-adapter-react'
 import { createContext, useContext, useState, type ReactNode } from 'react'
 import styles from './WalletModal.module.css'
@@ -22,7 +20,6 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
 }
 
 export function useWalletModal() {
-  const ctx = useCtx(ModalContext)
   const ctx = useContext(ModalContext)
   if (!ctx) throw new Error('useWalletModal must be used within WalletModalProvider')
   return ctx
@@ -30,7 +27,6 @@ export function useWalletModal() {
 
 export default function WalletModal() {
   const { wallets = [], connect } = useWallet()
-  const hasAptosConnectConfig = Boolean(process.env.NEXT_PUBLIC_APTOS_CONNECT_DAPP_ID)
   const { isOpen, close } = useWalletModal()
 
   if (!isOpen) return null
@@ -78,16 +74,6 @@ export default function WalletModal() {
               ))}
             </div>
             <p className={styles.socialNote}>Powered by Aptos Connect · No crypto experience needed</p>
-          </div>
-        )}
-
-        {aptosConnectWallets.length === 0 && !hasAptosConnectConfig && (
-          <div className={styles.section}>
-            <span className={styles.sectionLabel}>SIGN IN — NO EXTENSION NEEDED</span>
-            <p className={styles.socialNote}>
-              Aptos Connect is not configured yet. Set <code>NEXT_PUBLIC_APTOS_CONNECT_DAPP_ID</code>
-              in your environment to enable Petra Web / Google sign-in.
-            </p>
           </div>
         )}
 
