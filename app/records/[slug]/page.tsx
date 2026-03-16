@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { CONTENT_TYPES, LICENSE_TIERS } from '@/lib/content-types'
 import ContentTypeBadge from '@/components/ui/ContentTypeBadge'
 import { useWallet } from '@aptos-labs/wallet-adapter-react'
+import { CONTRACT, TIER_VIEW, TIER_CITE, TIER_LICENSE, type LicenseTier } from '@/lib/contract'
 import styles from './record.module.css'
 
 interface SourceDoc { id: string; name: string; content_hash: string; blob_name?: string }
@@ -32,9 +33,6 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
       .catch(() => setLoading(false))
   }, [params.slug])
 
-  const PLATFORM_ADDRESS = '0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8'
-  const PLATFORM_FEE_PCT = 0.1 // 10% to platform
-
   const handleUnlock = async (tier: string) => {
     if (!record?.blob_name) return
     setUnlocking(true)
@@ -54,38 +52,23 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
       const isFree = priceRaw === 0
 
       if (!isFree) {
-        // Must be connected to pay
         if (!connected || !signAndSubmitTransaction) {
           throw new Error('Connect your wallet to unlock this record.')
         }
-        if (!record.publisher_address) {
-          throw new Error('Publisher address not found — cannot process payment.')
-        }
 
-        const platformOctas = Math.round(priceOctas * PLATFORM_FEE_PCT)
-        const publisherOctas = priceOctas - platformOctas
-
-        // Pay publisher (90%)
-        if (publisherOctas > 0) {
-          await signAndSubmitTransaction({
-            data: {
-              function: '0x1::coin::transfer',
-              typeArguments: ['0x1::aptos_coin::AptosCoin'],
-              functionArguments: [record.publisher_address, publisherOctas],
-            },
-          } as any)
-        }
-
-        // Pay platform (10%)
-        if (platformOctas > 0) {
-          await signAndSubmitTransaction({
-            data: {
-              function: '0x1::coin::transfer',
-              typeArguments: ['0x1::aptos_coin::AptosCoin'],
-              functionArguments: [PLATFORM_ADDRESS, platformOctas],
-            },
-          } as any)
-        }
+        // Use smart contract — atomic payment split in one transaction
+        const tierNum = tier === 'view' ? 1 : tier === 'cite' ? 2 : 3
+        await signAndSubmitTransaction({
+          data: {
+            function: `${process.env.NEXT_PUBLIC_PLATFORM_ADDRESS || '0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8'}::record_registry::purchase_license`,
+            typeArguments: [],
+            functionArguments: [
+              process.env.NEXT_PUBLIC_PLATFORM_ADDRESS || '0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8',
+              record.slug,
+              tierNum,
+            ],
+          },
+        } as any)
       }
 
       // ── Fetch content from Shelby ──────────────────────────────────────

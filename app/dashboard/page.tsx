@@ -141,6 +141,31 @@ export default function DashboardPage() {
         throw new Error(error)
       }
 
+      // ── Step 4: Register record on-chain via smart contract ─────────────
+      try {
+        const platformAddr = process.env.NEXT_PUBLIC_PLATFORM_ADDRESS ||
+          '0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8'
+        setUploadProgress('Registering on-chain…')
+        await signAndSubmitTransaction({
+          data: {
+            function: `${platformAddr}::record_registry::register_record`,
+            typeArguments: [],
+            functionArguments: [
+              platformAddr,
+              slug,
+              articleReceipt.contentHash || '',
+              articleReceipt.blobName || '',
+              Math.round(parseFloat(form.priceView) * 10000),
+              Math.round(parseFloat(form.priceCite) * 10000),
+              Math.round(parseFloat(form.priceLicense) * 10000),
+            ],
+          },
+        } as any)
+      } catch (contractErr) {
+        // Contract registration failing shouldn't block the publish
+        console.warn('[dashboard] Contract registration failed:', contractErr)
+      }
+
       setPublishedSlug(slug)
       setStatus('success')
       setForm(EMPTY_FORM); setDocs([]); setPublishStep('write'); setUploadProgress('')
