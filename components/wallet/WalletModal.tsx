@@ -2,6 +2,8 @@
 
 import { useWallet, groupAndSortWallets, isInstallRequired } from '@aptos-labs/wallet-adapter-react'
 import { useContext, createContext, useState, useContext as useCtx, ReactNode } from 'react'
+import { useWallet, groupAndSortWallets } from '@aptos-labs/wallet-adapter-react'
+import { createContext, useState, useContext as useCtx, ReactNode } from 'react'
 import styles from './WalletModal.module.css'
 
 const ModalContext = createContext<{
@@ -77,7 +79,6 @@ export default function WalletModal() {
             <p className={styles.socialNote}>Powered by Aptos Connect · No crypto experience needed</p>
           </div>
         )}
-
 
         {aptosConnectWallets.length === 0 && !hasAptosConnectConfig && (
           <div className={styles.section}>
