@@ -27,6 +27,7 @@ export function useWalletModal() {
 
 export default function WalletModal() {
   const { wallets = [], connect } = useWallet()
+  const hasAptosConnectConfig = Boolean(process.env.NEXT_PUBLIC_APTOS_CONNECT_DAPP_ID)
   const { isOpen, close } = useWalletModal()
 
   if (!isOpen) return null
@@ -74,6 +75,17 @@ export default function WalletModal() {
               ))}
             </div>
             <p className={styles.socialNote}>Powered by Aptos Connect · No crypto experience needed</p>
+          </div>
+        )}
+
+
+        {aptosConnectWallets.length === 0 && !hasAptosConnectConfig && (
+          <div className={styles.section}>
+            <span className={styles.sectionLabel}>SIGN IN — NO EXTENSION NEEDED</span>
+            <p className={styles.socialNote}>
+              Aptos Connect is not configured yet. Set <code>NEXT_PUBLIC_APTOS_CONNECT_DAPP_ID</code>
+              in your environment to enable Petra Web / Google sign-in.
+            </p>
           </div>
         )}
 

@@ -15,5 +15,7 @@ declare namespace NodeJS {
     NEXT_PUBLIC_SHELBY_NETWORK: string   // Exposed to browser for explorer links
     NEXT_PUBLIC_APTOS_EXPLORER_BASE: string
     NEXT_PUBLIC_SHELBY_EXPLORER_BASE: string
+    NEXT_PUBLIC_APTOS_CONNECT_DAPP_ID?: string
+    NEXT_PUBLIC_APTOS_NETWORK?: "testnet" | "mainnet" | "devnet"
   }
 }

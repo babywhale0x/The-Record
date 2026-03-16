@@ -87,6 +87,21 @@ Copy `private_key` and `address` from `~/.shelby/config.yaml` into `.env.local`.
 
 ---
 
+## Petra Web / Aptos Connect Setup
+
+If extension wallets work but Petra Web (Google sign-in) fails, the issue is usually Aptos Connect configuration, not your UI code.
+
+1. Create or open your Aptos Connect app at `https://aptosconnect.app`.
+2. Add your exact frontend domains to the app allowlist:
+   - local dev: `http://localhost:3000`
+   - production: your deployed domain (for example your Vercel URL and custom domain)
+3. Copy your Aptos Connect dapp id into `.env.local`:
+   - `NEXT_PUBLIC_APTOS_CONNECT_DAPP_ID=...`
+   - `NEXT_PUBLIC_APTOS_NETWORK=testnet` (or `mainnet` if your app is mainnet)
+4. Restart the dev server after env changes.
+
+The app now reads Aptos Connect settings from env instead of hardcoding a single dapp id, which prevents domain mismatch issues across local/dev/prod.
+
 ## Build Status
 
 ### ✅ Complete
