@@ -3,7 +3,7 @@
 import { useWallet, groupAndSortWallets, isInstallRequired } from '@aptos-labs/wallet-adapter-react'
 import { useContext, createContext, useState, useContext as useCtx, ReactNode } from 'react'
 import { useWallet, groupAndSortWallets } from '@aptos-labs/wallet-adapter-react'
-import { createContext, useState, useContext as useCtx, ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 import styles from './WalletModal.module.css'
 
 const ModalContext = createContext<{
@@ -23,6 +23,7 @@ export function WalletModalProvider({ children }: { children: ReactNode }) {
 
 export function useWalletModal() {
   const ctx = useCtx(ModalContext)
+  const ctx = useContext(ModalContext)
   if (!ctx) throw new Error('useWalletModal must be used within WalletModalProvider')
   return ctx
 }
