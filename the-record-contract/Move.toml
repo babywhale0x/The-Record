@@ -1,0 +1,11 @@
+[package]
+name = "TheRecord"
+version = "1.0.0"
+authors = ["The Record"]
+
+[addresses]
+the_record = "_"
+platform = "_"
+
+[dependencies]
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "mainnet" }
