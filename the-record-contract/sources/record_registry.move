@@ -278,7 +278,7 @@ module the_record::record_registry {
         user_addr: address,
         record_slug: String,
         min_tier: u8,
-    ): bool acquires Registry, UserLicenses {
+    ): bool acquires UserLicenses {
         // Suppress unused warning
         let _ = platform_addr;
         if (!exists<UserLicenses>(user_addr)) return false;

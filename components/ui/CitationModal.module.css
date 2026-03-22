@@ -1,0 +1,57 @@
+.overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal {
+  background: var(--bg, #0a0a0a); border: 1px solid var(--border, #1a1a1a);
+  border-radius: 14px; width: 100%; max-width: 580px;
+  max-height: 90vh; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 20px 20px 16px; border-bottom: 1px solid var(--border, #1a1a1a);
+  gap: 12px;
+}
+.headerLeft { display: flex; align-items: flex-start; gap: 12px; }
+.icon { font-size: 24px; flex-shrink: 0; }
+.title { font-size: 16px; font-weight: 700; color: var(--text, #fff); margin: 0 0 4px; }
+.citationId { font-size: 11px; font-family: monospace; color: var(--accent, #e85d2a); font-weight: 700; letter-spacing: 0.05em; }
+.closeBtn { background: none; border: none; color: var(--text-muted, #666); font-size: 16px; cursor: pointer; padding: 4px; flex-shrink: 0; }
+
+.recordBar {
+  padding: 12px 20px; background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border, #1a1a1a);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.recordTitle { font-size: 14px; font-weight: 600; color: var(--text, #fff); }
+.recordMeta { font-size: 12px; color: var(--text-muted, #666); }
+
+.proofSection, .formatsSection { padding: 16px 20px; border-bottom: 1px solid var(--border, #1a1a1a); }
+.sectionTitle { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted, #666); margin: 0 0 12px; }
+.proofGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.proofItem { display: flex; flex-direction: column; gap: 3px; background: rgba(255,255,255,0.03); border: 1px solid var(--border, #1a1a1a); border-radius: 6px; padding: 8px 10px; position: relative; }
+.proofLabel { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-muted, #666); text-transform: uppercase; }
+.proofValue { font-size: 11px; font-family: monospace; color: var(--text, #fff); }
+.copySmall { position: absolute; top: 6px; right: 6px; background: none; border: none; cursor: pointer; font-size: 12px; color: var(--text-muted, #666); }
+.explorerLink { position: absolute; top: 6px; right: 6px; font-size: 12px; color: var(--accent, #e85d2a); text-decoration: none; }
+.verifyRow { display: flex; align-items: center; justify-content: space-between; }
+.verifiedBadge { font-size: 11px; font-weight: 700; color: #10b981; letter-spacing: 0.05em; }
+.verifyLink { font-size: 12px; color: var(--accent, #e85d2a); text-decoration: none; }
+.verifyLink:hover { text-decoration: underline; }
+
+.formatTabs { display: flex; gap: 0; border: 1px solid var(--border, #1a1a1a); border-radius: 6px; overflow: hidden; margin-bottom: 12px; }
+.formatTab { flex: 1; padding: 7px 8px; font-size: 12px; font-weight: 600; background: transparent; border: none; color: var(--text-muted, #666); cursor: pointer; border-right: 1px solid var(--border, #1a1a1a); transition: all 0.15s; }
+.formatTab:last-child { border-right: none; }
+.formatTabActive { background: var(--surface, #111); color: var(--text, #fff); }
+.formatBox { background: rgba(255,255,255,0.03); border: 1px solid var(--border, #1a1a1a); border-radius: 8px; padding: 14px; position: relative; }
+.formatText { font-size: 13px; color: var(--text, #fff); line-height: 1.6; margin: 0 0 10px; font-style: italic; }
+.copyBtn { background: var(--surface, #111); border: 1px solid var(--border, #1a1a1a); color: var(--text-muted, #666); font-size: 12px; padding: 5px 12px; border-radius: 5px; cursor: pointer; transition: all 0.15s; }
+.copyBtn:hover { color: var(--text, #fff); border-color: var(--accent, #e85d2a); }
+
+.actions { display: flex; gap: 8px; padding: 16px 20px; }
+.downloadBtn { flex: 1; padding: 10px; border-radius: 7px; border: 1px solid var(--border, #1a1a1a); background: transparent; color: var(--text, #fff); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.downloadBtn:hover { border-color: var(--accent, #e85d2a); }
+.closeAction { padding: 10px 16px; border-radius: 7px; border: none; background: var(--surface, #111); color: var(--text-muted, #666); font-size: 13px; cursor: pointer; }
