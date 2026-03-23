@@ -155,9 +155,9 @@ export default function DashboardPage() {
               slug,
               articleReceipt.contentHash || '',
               articleReceipt.blobName || '',
-              Math.round(parseFloat(form.priceView) * 10000),
-              Math.round(parseFloat(form.priceCite) * 10000),
-              Math.round(parseFloat(form.priceLicense) * 10000),
+              Math.round(parseFloat(form.priceView) * 1e8),
+              Math.round(parseFloat(form.priceCite) * 1e8),
+              Math.round(parseFloat(form.priceLicense) * 1e8),
             ],
           },
         } as any)
