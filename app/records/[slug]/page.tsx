@@ -56,19 +56,29 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
           throw new Error('Connect your wallet to unlock this record.')
         }
 
-        // Use smart contract — atomic payment split in one transaction
+      // Use smart contract — atomic payment split in one transaction
         const tierNum = tier === 'view' ? 1 : tier === 'cite' ? 2 : 3
-        await signAndSubmitTransaction({
-          data: {
-            function: `${process.env.NEXT_PUBLIC_PLATFORM_ADDRESS || '0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8'}::record_registry::purchase_license`,
-            typeArguments: [],
-            functionArguments: [
-              process.env.NEXT_PUBLIC_PLATFORM_ADDRESS || '0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8',
-              record.slug,
-              tierNum,
-            ],
-          },
-        } as any)
+        const platformAddr = process.env.NEXT_PUBLIC_PLATFORM_ADDRESS || '0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8'
+        try {
+          await signAndSubmitTransaction({
+            data: {
+              function: `${platformAddr}::record_registry::purchase_license`,
+              typeArguments: [],
+              functionArguments: [platformAddr, record.slug, tierNum],
+            },
+          } as any)
+        } catch (contractErr: any) {
+          // Fallback for records not yet registered on-chain
+          if (contractErr?.message?.includes('0x3') || contractErr?.message?.includes('E_RECORD_NOT_FOUND')) {
+            if (!record.publisher_address) throw new Error('Publisher address not found')
+            const platformFee = Math.round(priceOctas * 0.1)
+            const publisherShare = priceOctas - platformFee
+            if (publisherShare > 0) await signAndSubmitTransaction({ data: { function: '0x1::coin::transfer', typeArguments: ['0x1::aptos_coin::AptosCoin'], functionArguments: [record.publisher_address, publisherShare] } } as any)
+            if (platformFee > 0) await signAndSubmitTransaction({ data: { function: '0x1::coin::transfer', typeArguments: ['0x1::aptos_coin::AptosCoin'], functionArguments: [platformAddr, platformFee] } } as any)
+          } else {
+            throw contractErr
+          }
+        }
       }
 
       // ── Fetch content from Shelby ──────────────────────────────────────
