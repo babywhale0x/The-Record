@@ -4,6 +4,7 @@ import { CONTENT_TYPES, LICENSE_TIERS } from '@/lib/content-types'
 import ContentTypeBadge from '@/components/ui/ContentTypeBadge'
 import { useWallet } from '@aptos-labs/wallet-adapter-react'
 import { CONTRACT, TIER_VIEW, TIER_CITE, TIER_LICENSE, type LicenseTier } from '@/lib/contract'
+import { cacheLicense, getCachedLicense, getLicenseTimeRemaining } from '@/lib/licenseCache'
 import styles from './record.module.css'
 
 interface SourceDoc { id: string; name: string; content_hash: string; blob_name?: string }
@@ -24,14 +25,43 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
   const [unlocked, setUnlocked] = useState(false)
   const [fullBody, setFullBody] = useState<string | null>(null)
   const [unlockError, setUnlockError] = useState<string | null>(null)
+  const [timeRemaining, setTimeRemaining] = useState<string | null>(null)
   const { account, signAndSubmitTransaction, connected } = useWallet()
 
+  const address = account?.address ? String(account.address) : ''
+
+  // Load record from Supabase
   useEffect(() => {
     fetch(`/api/records/${params.slug}`)
       .then((r) => r.json())
       .then((data) => { if (data.record) setRecord(data.record); setLoading(false) })
       .catch(() => setLoading(false))
   }, [params.slug])
+
+  // Check license cache on load — restore access without repayment
+  useEffect(() => {
+    if (!record || !address) return
+    const cached = getCachedLicense(record.slug, address)
+    if (cached) {
+      setActiveTier(cached.tier)
+      setUnlocked(true)
+      setTimeRemaining(getLicenseTimeRemaining(record.slug, address))
+      // Also fetch the content
+      const addr = record.publisher_address || ''
+      const streamPath = addr ? `${addr}/${record.blob_name}` : record.blob_name || ''
+      if (streamPath) {
+        fetch(`/api/stream/${streamPath}`)
+          .then(r => r.text())
+          .then(raw => {
+            try {
+              const parsed = JSON.parse(raw)
+              setFullBody(parsed.body || parsed.excerpt || raw)
+            } catch { setFullBody(raw) }
+          })
+          .catch(() => {})
+      }
+    }
+  }, [record, address])
 
   const handleUnlock = async (tier: string) => {
     if (!record?.blob_name) return
@@ -40,13 +70,11 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
     setUnlockError(null)
 
     try {
-      // ── Payment gate ────────────────────────────────────────────────────
       const priceMap: Record<string, number> = {
         view: record.price_view,
         cite: record.price_cite,
         license: record.price_license,
       }
-      // price stored as apt*10000, convert to octas for wallet (1 APT = 1e8 octas)
       const priceRaw = priceMap[tier] ?? record.price_view
       const priceOctas = Math.round((priceRaw / 10000) * 1e8)
       const isFree = priceRaw === 0
@@ -56,9 +84,9 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
           throw new Error('Connect your wallet to unlock this record.')
         }
 
-      // Use smart contract — atomic payment split in one transaction
         const tierNum = tier === 'view' ? 1 : tier === 'cite' ? 2 : 3
         const platformAddr = process.env.NEXT_PUBLIC_PLATFORM_ADDRESS || '0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8'
+
         try {
           await signAndSubmitTransaction({
             data: {
@@ -68,7 +96,6 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
             },
           } as any)
         } catch (contractErr: any) {
-          // Fallback for records not yet registered on-chain
           if (contractErr?.message?.includes('0x3') || contractErr?.message?.includes('E_RECORD_NOT_FOUND')) {
             if (!record.publisher_address) throw new Error('Publisher address not found')
             const platformFee = Math.round(priceOctas * 0.1)
@@ -81,7 +108,7 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
         }
       }
 
-      // ── Fetch content from Shelby ──────────────────────────────────────
+      // Fetch content from Shelby
       const addr = record.publisher_address || ''
       const streamPath = addr ? `${addr}/${record.blob_name}` : record.blob_name
       const res = await fetch(`/api/stream/${streamPath}`)
@@ -96,8 +123,16 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
       }
 
       setUnlocked(true)
+
+      // Cache license so user doesn't pay again
+      if (address) {
+        cacheLicense(record.slug, tier, address)
+        setTimeRemaining(getLicenseTimeRemaining(record.slug, address))
+      }
+
     } catch (err: any) {
       setUnlockError(err?.message || 'Failed to unlock. Please try again.')
+      setActiveTier(null)
     } finally {
       setUnlocking(false)
     }
@@ -122,11 +157,10 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
     day: 'numeric', month: 'long', year: 'numeric'
   })
   const txHash = record.aptos_tx_hash || ''
-  // Prices stored as apt * 10000 (e.g. 0.01 APT stored as 100)
+
   const toApt = (val: number) => {
     const apt = val / 10000
     if (apt === 0) return '0'
-    // Strip trailing zeros
     return parseFloat(apt.toFixed(4)).toString()
   }
   const tiers = {
@@ -246,6 +280,11 @@ export default function RecordPage({ params }: { params: { slug: string } }) {
                 Watermarked · {record.content_hash?.slice(0, 10) || '0x…'}
               </span>
             </div>
+            {timeRemaining && (
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', padding: '6px 16px', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+                ⏱ {timeRemaining}
+              </div>
+            )}
             <div className={styles.viewerBody} onContextMenu={(e) => e.preventDefault()}>
               {(fullBody || record.excerpt).split('\n\n').map((para, i) => (
                 <p key={i} className={styles.viewerPara}>{para}</p>
