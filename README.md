@@ -1,34 +1,203 @@
 # The Record
 
-> Censorship-resistant investigative journalism and government document archive for Nigeria and West Africa — built on Shelby Protocol (Aptos blockchain).
+**Permanent. Verified. On-Chain.**
 
-Every article stored permanently. Every source document hash-committed on-chain. Every payment wallet-to-wallet. No platform can take it down.
+> A censorship-resistant knowledge archive for investigations, journalism, legal documents, research, and on-chain analysis — cryptographically committed to the Aptos blockchain via Shelby Protocol.
+
+[![Live](https://img.shields.io/badge/live-therecord.vercel.app-orange)](https://therecord.vercel.app)
+[![Network](https://img.shields.io/badge/network-Aptos%20Testnet-blue)](https://explorer.aptoslabs.com)
+[![Storage](https://img.shields.io/badge/storage-Shelby%20Protocol-purple)](https://shelby.xyz)
+[![License](https://img.shields.io/badge/license-BUSL%201.1-green)](#license)
 
 ---
 
-## What it is
+## What Is The Record?
 
-Independent journalists in Nigeria face payment processor blocks, government takedowns, and editorial interference. The Record is infrastructure that removes all three attack surfaces:
+The Record is a permanent, verifiable, monetizable knowledge archive. Every record published on the platform is:
 
-- **Articles + source documents** stored as blobs on Shelby Protocol (decentralised storage on Aptos)
-- **Cryptographic hash** of every article committed to Aptos at publish time — any future alteration is immediately detectable
-- **Direct wallet-to-wallet payments** — readers pay journalists directly; no bank, no processor, no middleman
-- **Dead man's switch** — time-locked article releases via Aptos smart contract
-- **Background archive** — automatic scraper pipeline for INEC, BPP, EFCC, NASS, CBN, NJC public documents
-- **Two-sided publishing** — journalists choose public or private per article; private articles are end-to-end encrypted
+- **Uploaded to Shelby Protocol** — decentralised storage on the Aptos blockchain, distributed across thousands of nodes worldwide
+- **Committed on-chain** — content hash and metadata permanently stored in a Move smart contract on Aptos testnet
+- **Impossible to alter or delete** — once published, the record exists forever
+- **Monetizable** — publishers set prices for four license tiers; readers pay in APT directly from their wallet
+
+The platform is built for investigators, journalists, researchers, scientists, lawyers, and anyone with hard knowledge to share and protect.
+
+---
+
+## Six Content Types
+
+| Type | Icon | Colour |
+|------|------|--------|
+| On-Chain | ⛓ | Purple `#7C3AED` |
+| Investigation | 🔍 | Red `#C4401E` |
+| Journalism | 📰 | Blue `#3B82F6` |
+| Science | 🔬 | Green `#10B981` |
+| Legal | ⚖️ | Amber `#F59E0B` |
+| Financial | 📊 | Green `#22C55E` |
+
+---
+
+## Four License Tiers
+
+| Tier | Description | Access |
+|------|-------------|--------|
+| **View** | 48-hour read-only access, watermarked | Platform viewer only, no download |
+| **Cite** | Permanent citation rights | Signed citation certificate (APA, MLA, Chicago, Bluebook) |
+| **License** | Full professional use | Download enabled, hard visible watermark |
+| **Institutional** | Bulk + API access | Custom contract |
+
+Publishers set all prices in APT. Platform takes 10%, publisher receives 90% — settled atomically in a single on-chain transaction via the Move smart contract.
+
+---
+
+## Architecture
+
+```
+Browser (Next.js 14)
+    │
+    ├── Shelby Protocol (Aptos Testnet)
+    │   └── Decentralised blob storage
+    │       ├── Article JSON blobs
+    │       └── Source document blobs
+    │
+    ├── Aptos Blockchain (Testnet)
+    │   └── record_registry Move module
+    │       ├── register_record()
+    │       ├── purchase_license()
+    │       ├── has_license()
+    │       └── get_stats()
+    │
+    ├── Supabase (Postgres)
+    │   ├── records
+    │   ├── source_documents
+    │   ├── citations
+    │   ├── publishers
+    │   └── creator_applications
+    │
+    └── Vercel (Hosting)
+        └── Next.js API Routes
+            ├── /api/publish
+            ├── /api/stream
+            ├── /api/balance
+            ├── /api/feed
+            ├── /api/citation
+            ├── /api/ai/search
+            └── /api/admin/*
+```
 
 ---
 
 ## Tech Stack
 
-| Layer | Choice | Why |
-|---|---|---|
-| Framework | Next.js 14 (App Router) | RSC for performance, API routes for server-side Shelby calls |
-| Language | TypeScript | Full end-to-end type safety |
-| Styling | CSS Modules (no Tailwind) | Full design control, no compiler dependency |
-| Storage | Shelby Protocol | Decentralised blob storage on Aptos, ~$0.01/GB/month |
-| Chain | Aptos | Shelby's native chain; fast, cheap |
-| Fonts | Playfair Display · DM Sans · DM Mono | Editorial feel |
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 14.2.5 (App Router) |
+| Styling | CSS Modules (dark theme) |
+| Blockchain | Aptos Testnet |
+| Smart Contract | Move — `record_registry` module |
+| Decentralised Storage | Shelby Protocol SDK |
+| Database | Supabase (Postgres) |
+| Wallet | `@aptos-labs/wallet-adapter-react` v4 — Petra, Martian, and others |
+| AI Search | Claude (Anthropic API) |
+| Hosting | Vercel |
+
+---
+
+## Five-Tab Navigation
+
+| Tab | Route | Description |
+|-----|-------|-------------|
+| **Home** | `/` | Discovery feed, featured and recent records, content type filters |
+| **Feed** | `/feed` | Full feed with type filters, live from Supabase |
+| **AI** | `/ai` | Semantic search + Ask the Archive (Claude-powered) |
+| **Publish** | `/publish` | Publisher application form; approved wallets redirect to dashboard |
+| **Wallet** | `/wallet` | Live APT balance, transaction history, published records |
+
+---
+
+## Key Features
+
+### Publisher Flow
+1. Apply at `/publish` — 3-step application form with wallet capture
+2. Admin reviews at `/admin` — approve or reject with single click
+3. Approved wallet redirects to `/dashboard`
+4. Publisher uploads article + source documents from the dashboard
+5. Browser wallet signs two transactions — one per file — directly to Shelby
+6. Article registered on-chain via `register_record()` smart contract call
+7. Receipt saved to Supabase
+
+### Reader / Unlock Flow
+1. Reader visits a record page
+2. If they have a cached license (localStorage), content unlocks instantly
+3. Otherwise they select a tier and pay via wallet
+4. `purchase_license()` smart contract executes atomic 90/10 split
+5. Content fetched from Shelby and decrypted in browser
+6. License cached locally — View tier expires after 48h, Cite/License are permanent
+
+### Citation Flow
+When a reader purchases the **Cite** or **License** tier, a signed citation certificate is generated containing:
+- Unique Citation ID (e.g. `CR-A3F9B2C14D8E`)
+- APA, MLA, Chicago, and Bluebook (legal) formatted citations
+- On-chain proof: content hash + license TX hash
+- Public verification URL at `/verify/{citationId}`
+- Downloadable as `.txt` or `.json`
+
+### Watermarking
+Every unlocked document receives two layers of watermarking:
+- **Invisible** — reader's wallet address encoded as zero-width Unicode characters between words; survives copy-paste; forensically extractable
+- **Visual** — subtle diagonal overlay showing truncated wallet + citation ID at low opacity
+
+### AI Search Tab
+Two modes powered by Claude:
+- **Search Archive** — describe what you're looking for in plain language; returns ranked matches with relevance explanations and match scores
+- **Ask the Archive** — conversational interface; Claude answers questions using published records as context
+
+---
+
+## Smart Contract
+
+**Module:** `0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8::record_registry`
+
+**Network:** Aptos Testnet
+
+**Entry functions:**
+- `initialize(platform)` — deploy registry (run once)
+- `register_record(publisher, platform_addr, slug, content_hash, blob_name, price_view, price_cite, price_license)` — register record on-chain
+- `purchase_license(buyer, platform_addr, record_slug, tier)` — atomic payment split
+
+**View functions:**
+- `get_record(platform_addr, slug)` — returns content hash, publisher, prices, active status
+- `has_license(platform_addr, user_addr, slug, min_tier)` — verify license on-chain
+- `get_stats(platform_addr)` — total records, licenses, volume
+
+[View on Aptos Explorer →](https://explorer.aptoslabs.com/account/0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8/modules/code/record_registry?network=testnet)
+
+---
+
+## Environment Variables
+
+```env
+# Aptos / Shelby
+APTOS_PRIVATE_KEY=ed25519-priv-0x...
+APTOS_ACCOUNT_ADDRESS=0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8
+SHELBY_API_KEY=aptoslabs_...
+SHELBY_NETWORK=testnet
+NEXT_PUBLIC_APTOS_API_KEY=AG-...
+NEXT_PUBLIC_PLATFORM_ADDRESS=0xa8c20d49b063e41aff19123fd2263d0b9945ec9708ce9d7ec72d68f485043cb8
+NEXT_PUBLIC_SHELBY_NETWORK=testnet
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://...supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+
+# AI
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Admin
+ADMIN_PASSWORD=...
+CRON_SECRET=...
+```
 
 ---
 
@@ -37,179 +206,99 @@ Independent journalists in Nigeria face payment processor blocks, government tak
 ```
 the-record/
 ├── app/
-│   ├── layout.tsx
-│   ├── page.tsx                          # Landing page
-│   ├── apply/page.tsx                    # /apply
-│   ├── dashboard/page.tsx                # /dashboard
-│   ├── investigations/
-│   │   ├── page.tsx                      # /investigations
-│   │   └── [slug]/page.tsx               # /investigations/:slug
+│   ├── page.tsx              # Home
+│   ├── feed/                 # Feed
+│   ├── ai/                   # AI search
+│   ├── publish/              # Application form
+│   ├── dashboard/            # Publisher dashboard
+│   ├── admin/                # Admin panel
+│   ├── records/[slug]/       # Record viewer
+│   ├── verify/[id]/          # Citation verification
 │   └── api/
-│       ├── publish/route.ts
-│       ├── verify/route.ts
-│       └── balance/route.ts
+│       ├── publish/          # Save record to Supabase
+│       ├── feed/             # Public record feed
+│       ├── records/[slug]/   # Single record fetch
+│       ├── stream/[...path]/ # Shelby blob proxy
+│       ├── balance/          # APT balance
+│       ├── citation/         # Citation generation + verification
+│       ├── ai/search/        # Claude-powered search
+│       └── admin/            # Admin operations
 ├── components/
-│   ├── layout/          # AnnouncementBar, Nav, Footer
-│   ├── sections/        # Landing page sections
-│   ├── dashboard/       # DashboardShell, Nav, Home, ArticleEditor
-│   ├── investigations/  # InvestigationsFeed, ArticlePage
-│   └── ui/              # SectionHeader, DocumentMockup
+│   ├── layout/               # TopBar, BottomNav
+│   ├── ui/                   # RecordCard, ContentTypeBadge, CitationModal, WatermarkedViewer
+│   └── wallet/               # AptosProvider, WalletModal
 ├── lib/
-│   ├── shelby.ts        # Shelby Protocol + Aptos integration
-│   ├── shelby-client.ts # Browser-safe API wrapper
-│   ├── investigations.ts
-│   └── env.d.ts
-├── styles/globals.css
-└── .env.example
+│   ├── shelby.ts             # Server-side Shelby SDK
+│   ├── shelby-browser.ts     # Browser-side upload
+│   ├── contract.ts           # Smart contract integration
+│   ├── watermark.ts          # Invisible + visual watermarking
+│   ├── licenseCache.ts       # localStorage license cache
+│   ├── supabase.ts           # Supabase client
+│   └── content-types.ts      # Content type definitions
+├── contracts/
+│   ├── Move.toml
+│   ├── deploy.sh
+│   └── sources/
+│       └── record_registry.move
+└── styles/
+    └── globals.css
 ```
 
 ---
 
-## Getting Started
+## Supabase Schema
 
+| Table | Purpose |
+|-------|---------|
+| `records` | Published records with metadata, pricing, blob references |
+| `source_documents` | Documents attached to records |
+| `citations` | Citation certificates issued to licensees |
+| `publishers` | Approved publisher wallets |
+| `creator_applications` | Pending publisher applications |
+
+---
+
+## Deployment
+
+The app deploys automatically to Vercel on push to `main`.
+
+**Manual deploy:**
 ```bash
-git clone https://github.com/YOUR_USERNAME/the-record.git
-cd the-record
-npm install
-cp .env.example .env.local   # fill in your Shelby + Aptos keys
-npm run dev
+npx vercel --prod
 ```
 
-To get your keys:
+**Contract deployment:**
 ```bash
-npm i -g @shelby-protocol/cli
-shelby init
-shelby faucet --network testnet
-shelby account list
+cd contracts
+aptos move compile --named-addresses the_record=<address>,platform=<address>
+aptos move publish --named-addresses the_record=<address>,platform=<address> --profile testnet --assume-yes
+aptos move run --function-id "<address>::record_registry::initialize" --profile testnet --assume-yes
 ```
 
-Copy `private_key` and `address` from `~/.shelby/config.yaml` into `.env.local`.
-
 ---
 
-## Petra Web / Aptos Connect Setup
+## Roadmap
 
-If extension wallets work but Petra Web (Google sign-in) fails, the issue is usually Aptos Connect configuration, not your UI code.
-
-1. Create or open your Aptos Connect app at `https://aptosconnect.app`.
-2. Add your exact frontend domains to the app allowlist:
-   - local dev: `http://localhost:3000`
-   - production: your deployed domain (for example your Vercel URL and custom domain)
-3. Copy your Aptos Connect dapp id into `.env.local`:
-   - `NEXT_PUBLIC_APTOS_CONNECT_DAPP_ID=...`
-   - `NEXT_PUBLIC_APTOS_NETWORK=testnet` (or `mainnet` if your app is mainnet)
-4. Restart the dev server after env changes.
-
-The app now reads Aptos Connect settings from env instead of hardcoding a single dapp id, which prevents domain mismatch issues across local/dev/prod.
-
-## Build Status
-
-### ✅ Complete
-
-| Feature | Notes |
-|---|---|
-| Landing page | All sections: Hero, HowItWorks, ForJournalists, ForReaders, ArchiveSection, BuiltOn, CTA |
-| `/apply` — journalist application | 3-step form with validation + success state |
-| `/dashboard` — editor + publish UI | 4-tab editor with simulated Shelby publish flow |
-| `/investigations` — feed + article reader | Filterable feed, paywall, source doc verification UI |
-| `lib/shelby.ts` — Shelby + Aptos integration | Upload, retrieve, verify, balance, renewal |
-| API routes | `/api/publish`, `/api/verify`, `/api/balance` |
-| BUSL 1.1 License | Code is public but commercially protected |
-
----
-
-### ⏳ Pending — Privacy & Identity Layer
-
-These features are the next engineering priority. They address the real threat model for journalists operating in Nigeria.
-
-#### P1 — Pseudonymous Publishing
-- Journalists publish under a pen name (chosen at wallet creation), not their real name
-- Real identity is held only in a sealed, offline-encrypted editorial register — never in the database
-- The platform never links a wallet address to a real person publicly
-
-#### P2 — Stealth Wallet Addresses (per-article)
-- Each article is published from a **one-time derived address**, not the journalist's main wallet
-- Prevents chain-tracing: a reader or government actor cannot look up a journalist's wallet and see all their articles, earnings, or identity
-- The journalist controls all derived addresses from one master key — they don't manage multiple wallets
-- Critical for physical safety: a journalist with ₦2m in on-chain earnings from a corruption piece is a target
-
-#### P3 — Two-Sided Publishing (Public vs Private)
-- **Public** — article visible to all readers on `/investigations`; content stored unencrypted on Shelby; Aptos hash is public
-- **Private** — article visible only to wallet-holders who have been granted access; content is **end-to-end encrypted** before it leaves the browser using the reader's Aptos public key; even Shelby storage providers cannot read it
-- Journalist chooses Public or Private per article in the editor Settings tab
-- Private articles can be shared with: specific wallets (named sources, editors, lawyers), paid subscribers only, or embargoed until a date (dead man's switch)
-- Private does not mean hidden from the archive — the hash and timestamp are still committed on-chain; only the content is encrypted
-
-#### P4 — Journalist Privacy Controls (Dashboard)
-- Toggle: show/hide real name on published articles
-- Toggle: show/hide wallet address on published articles
-- Option to publish fully anonymously (no name, no address — just the on-chain proof)
-- Manage which wallets have access to private articles
-- Revoke access to private articles (re-encrypt with new key set, old key invalidated)
-
-#### P5 — Source Submission Portal (Anonymous)
-- Separate `/submit` route for anonymous sources to submit documents
-- Tor-accessible — no IP logged, no cookies
-- End-to-end encrypted upload direct to journalist's Shelby inbox
-- Source never needs a wallet — they submit via a journalist's public submission link
-- Journalist's submission link is a derived key, not their main address
-
-#### P6 — Minimal Data Collection
-- Strip real name, Twitter handle, city from the apply form — editorial verification happens off-platform
-- No analytics, no tracking, no third-party scripts
-- All auth is wallet-signature based — no email/password database to breach
-
----
-
-### ⏳ Pending — Infrastructure
-
-| Feature | Notes |
-|---|---|
-| Government archive scraper | Node.js + Playwright; INEC, BPP, EFCC, NASS, CBN first |
-| Real wallet auth | Aptos wallet connect (Petra, Martian) replacing mock Bearer token |
-| Smart contract | Dead man's switch, hash commitment, access control for private articles |
-| Blob renewal cron | Auto-renew Shelby blobs before expiry |
-| IPFS/Fleek mirror | Censorship-resistant frontend deployment (survives domain seizure) |
-| `/archive` search UI | Full-text search across all archived government documents |
-| `/verify` page | Public tool — paste any Aptos tx hash, verify document integrity |
-| `/about`, `/pricing` pages | |
-| `.onion` mirror | Tor hidden service for the full platform |
-
----
-
-## Privacy Architecture (Design Intent)
-
-```
-Journalist's real identity
-        │
-        │  never stored on platform
-        ▼
-  Pen name + Master Aptos key
-        │
-        ├──► Article 1 → derived address A → Shelby blob → Aptos tx
-        ├──► Article 2 → derived address B → Shelby blob → Aptos tx
-        └──► Article 3 → derived address C → Shelby blob → Aptos tx (PRIVATE: encrypted)
-
-Reader wanting private article:
-  Reader wallet pubkey → journalist encrypts blob → only reader's privkey can decrypt
-```
-
-No single point of failure. No database of journalist identities. No traceable wallet history.
-
----
-
-## Grants
-
-Targeting: Aptos Foundation · CPJ · Freedom of the Press Foundation · Mozilla Foundation · Open Society Foundations
+- [x] Publish flow — browser wallet signs directly to Shelby
+- [x] Smart contract — atomic license purchase with 90/10 split
+- [x] Citation certificates — APA, MLA, Chicago, Bluebook
+- [x] Invisible + visual watermarking
+- [x] License cache — no re-payment on revisit
+- [x] AI semantic search + Ask the Archive
+- [x] Wallet tab — live balance, transactions
+- [ ] Bunny CDN — edge caching for faster delivery
+- [ ] IPFS mirror — additional censorship resistance layer
+- [ ] Tor .onion mirror
+- [ ] Fiat onramp — card payments via Stripe
+- [ ] Subscription tier — recurring payments
+- [ ] Mobile app
 
 ---
 
 ## License
 
-Business Source License 1.1 — see [LICENSE](./LICENSE).
-Code is publicly readable and auditable. Commercial use requires permission.
-Converts to MIT on 2030-01-01.
+Business Source License 1.1 (BUSL 1.1). See [LICENSE](./LICENSE) for full terms.
 
 ---
 
-Built on [Shelby Protocol](https://shelby.xyz) · [Aptos](https://aptos.dev) · [Next.js](https://nextjs.org)
+*The Record — Permanent. Verified. On-Chain.*
