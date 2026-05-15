@@ -1,7 +1,4 @@
 import type { Metadata } from 'next'
-import AnnouncementBar from '@/components/layout/AnnouncementBar'
-import Nav from '@/components/layout/Nav'
-import Footer from '@/components/layout/Footer'
 import InvestigationsFeed from '@/components/investigations/InvestigationsFeed'
 
 export const metadata: Metadata = {
@@ -11,14 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function InvestigationsPage() {
-  return (
-    <>
-      <AnnouncementBar />
-      <Nav />
-      <main>
-        <InvestigationsFeed />
-      </main>
-      <Footer />
-    </>
-  )
+  return <InvestigationsFeed />
 }

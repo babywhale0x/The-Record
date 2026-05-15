@@ -1,8 +1,5 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import AnnouncementBar from '@/components/layout/AnnouncementBar'
-import Nav from '@/components/layout/Nav'
-import Footer from '@/components/layout/Footer'
 import ArticlePage from '@/components/investigations/ArticlePage'
 import { INVESTIGATIONS } from '@/lib/investigations'
 
@@ -27,14 +24,5 @@ export default function InvestigationArticlePage({ params }: Props) {
   const article = INVESTIGATIONS.find((i) => i.slug === params.slug)
   if (!article) notFound()
 
-  return (
-    <>
-      <AnnouncementBar />
-      <Nav />
-      <main>
-        <ArticlePage article={article} />
-      </main>
-      <Footer />
-    </>
-  )
+  return <ArticlePage article={article} />
 }

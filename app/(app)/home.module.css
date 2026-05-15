@@ -3,47 +3,6 @@
   padding-bottom: 80px;
 }
 
-/* Top bar */
-.topBar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  height: var(--top-bar-h);
-  background: rgba(10,10,10,0.9);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-}
-
-.logo {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.01em;
-}
-.logo span { color: var(--accent); }
-
-.topBarRight { display: flex; align-items: center; gap: 12px; }
-
-.networkBadge {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-}
-.networkDot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--verified);
-  animation: pulse 2s infinite;
-}
-
 /* Hero */
 .hero {
   padding: 40px 20px 32px;
@@ -216,7 +175,6 @@
 /* Desktop layout */
 @media (min-width: 768px) {
   .page { padding-left: 72px; }
-  .topBar { left: 72px; }
   .featuredGrid { grid-template-columns: 1fr 1fr; }
   .recentList { grid-template-columns: 1fr 1fr; }
   .typeGrid { grid-template-columns: repeat(3, 1fr); }
@@ -255,6 +213,4 @@
 .cardHash { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); font-family: monospace; }
 .cardHashLabel { font-size: 9px; letter-spacing: 0.08em; font-weight: 700; opacity: 0.6; }
 .cardOnChain { margin-left: auto; font-size: 10px; font-weight: 700; color: #10b981; letter-spacing: 0.05em; }
-.recentList { display: grid; gap: 12px; }
-.sectionLink { font-size: 13px; color: var(--accent); text-decoration: none; }
-.sectionLink:hover { text-decoration: underline; }
+

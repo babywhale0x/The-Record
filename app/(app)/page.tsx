@@ -59,15 +59,6 @@ export default function HomePage() {
 
   return (
     <main className={styles.page}>
-      <header className={styles.topBar}>
-        <div className={styles.logo}>The<span>Record</span></div>
-        <div className={styles.topBarRight}>
-          <span className={styles.networkBadge}>
-            <span className={styles.networkDot} />
-            Aptos Testnet
-          </span>
-        </div>
-      </header>
 
       <section className={styles.hero}>
         <div className={styles.heroEyebrow}>

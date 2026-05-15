@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from 'next'
 import '../styles/globals.css'
-import BottomNav from '@/components/layout/BottomNav'
-import TopBar from '@/components/layout/TopBar'
 import AptosProvider from '@/components/wallet/AptosProvider'
 import WalletModal, { WalletModalProvider } from '@/components/wallet/WalletModal'
 
@@ -28,11 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AptosProvider>
           <WalletModalProvider>
-            <TopBar />
-            <div style={{ paddingTop: 'var(--top-bar-h)' }}>
-              {children}
-            </div>
-            <BottomNav />
+            {children}
             <WalletModal />
           </WalletModalProvider>
         </AptosProvider>

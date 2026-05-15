@@ -15,17 +15,23 @@ export default function TopBar() {
   return (
     <div className={styles.bar}>
       <span className={styles.logo}>The Record</span>
-      {connected ? (
-        <div className={styles.connected}>
-          <span className={styles.dot} />
-          <span className={styles.address}>{shortAddress}</span>
-          <button className={styles.disconnectBtn} onClick={() => disconnect()}>✕</button>
-        </div>
-      ) : (
-        <button className={styles.connectBtn} onClick={open}>
-          Connect Wallet
-        </button>
-      )}
+      <div className={styles.right}>
+        <span className={styles.networkBadge}>
+          <span className={styles.networkDot} />
+          Aptos Testnet
+        </span>
+        {connected ? (
+          <div className={styles.connected}>
+            <span className={styles.dot} />
+            <span className={styles.address}>{shortAddress}</span>
+            <button className={styles.disconnectBtn} onClick={() => disconnect()}>✕</button>
+          </div>
+        ) : (
+          <button className={styles.connectBtn} onClick={open}>
+            Connect Wallet
+          </button>
+        )}
+      </div>
     </div>
   )
 }

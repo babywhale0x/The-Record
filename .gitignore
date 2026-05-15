@@ -15,6 +15,7 @@ node_modules/
 out/
 build/
 dist/
+*.tsbuildinfo
 
 # ── Shelby / Aptos credentials ─────────────────────────────────────
 # (keys live in .env.local — this is just a reminder)
